@@ -521,9 +521,9 @@ function boardHTML(){
     </tbody></table></div>
     ${any?"":`<p class="note">Ninguém pontuou ainda. O placar se enche quando alguém responde o primeiro treino ou termina um simulado.</p>`}
     <div><div class="eyebrow">Acerto da equipe por estação</div>
-    <div class="stations">${STATIONS.concat("enigma").map(s=>{ const t = team[s], pc = t.n?Math.round(t.ok/t.n*100):0;
+    <div class="stations">${STATIONS.map(s=>{ const t = team[s], pc = t.n?Math.round(t.ok/t.n*100):0;
       return `<div class="srow"><span style="color:${col(s)};font-weight:600">${ST[s].name.split(" ")[0]}</span><div class="bar"><i style="width:${pc}%;background:${col(s)}"></i></div><span class="mono muted">${t.n?pc+"%":"—"}</span></div>`; }).join("")}</div>
-    ${weakest?`<p class="note" style="margin-top:8px">Ponto fraco da equipe agora: <b style="color:${col(weakest.s)}">${ST[weakest.s].name}</b>. O treino de quem é reserva dela passa a puxar mais questões dessa estação.</p>`:""}
+    ${weakest?`<p class="note" style="margin-top:8px">Ponto fraco da equipe agora: <b style="color:${col(weakest.s)}">${ST[weakest.s].name}</b>. Quem é capitão dela pode focar o treino aí.</p>`:""}
     </div>
   </section>`;
 }
@@ -548,9 +548,8 @@ function renderEntry(){
       ${Object.entries(PEOPLE).map(([k,p])=>`
         <button class="person" data-p="${k}" type="button">
           <h3>${p.name}</h3>
-          <div class="eyebrow">Capitão</div>
+          <div class="eyebrow">Suas estações</div>
           <div class="chips">${p.capt.map(s=>chip(s,true)).join("")}</div>
-          ${p.res.length?`<div class="eyebrow">Reserva</div><div class="chips">${p.res.map(s=>chip(s,false)).join("")}</div>`:""}
         </button>`).join("")}
     </div>
   </section>
@@ -587,14 +586,14 @@ function renderHome(){
     <section class="panel mode">
       <div class="eyebrow">Treino</div>
       <h3>Rodada de ${ROUND} questões</h3>
-      <p class="muted">O sistema escolhe as questões: mais das suas estações, um pouco das outras e enigmas. Acertou duas seguidas, sobe a dificuldade; errou, desce.</p>
+      <p class="muted">Só questões das suas estações: ${PEOPLE[me].capt.map(s=>ST[s].name).join(" e ")}. Acertou duas seguidas, sobe a dificuldade; errou, desce.</p>
       <div id="homeStats" class="stack" style="gap:6px">${homeStats()}</div>
       <div><button class="btn" id="goTrain" type="button">${d.respondidas?"Continuar treino":"Começar treino"}</button></div>
     </section>
     <section class="panel mode">
       <div class="eyebrow">Simulado</div>
-      <h3>Circuito completo</h3>
-      <p class="muted">Como amanhã: dica para achar a sala, regra do celular na entrada, material de bancada, duas perguntas e 5 minutos de retenção por erro.</p>
+      <h3>Seu circuito</h3>
+      <p class="muted">Como amanhã, passando só pelas suas estações: dica para achar a sala certa entre as quatro, regra do celular na entrada, material de bancada, duas perguntas e 5 minutos de retenção por erro.</p>
       <p class="mono" style="font-size:14px">Seu melhor: <b>${fmt(d.melhorTempo)}</b></p>
       <div><button class="btn" id="goSim" type="button">Ir para a largada</button></div>
     </section>
@@ -643,16 +642,7 @@ function tally(d, st, ok){ d.stats = d.stats || {}; d.stats[st] = d.stats[st] ||
 let tr = null;
 function weakTeamStation(){ const team = {}; Object.keys(PEOPLE).forEach(p=>Object.entries(prog(p).stats||{}).forEach(([s,x])=>{ team[s]=team[s]||{n:0,ok:0}; team[s].n+=x.n; team[s].ok+=x.ok; }));
   let w = null; STATIONS.forEach(s=>{ const t = team[s]; if(t && t.n>=4 && (!w || t.ok/t.n < w.pc)) w = {s, pc:t.ok/t.n}; }); return w && w.s; }
-function nextStation(){
-  const p = PEOPLE[me], weak = weakTeamStation();
-  const others = STATIONS.filter(s=>!p.capt.includes(s) && !p.res.includes(s));
-  const bag = [];
-  p.capt.forEach(s=>{ for(let i=0;i<10;i++) bag.push(s); });
-  p.res.forEach(s=>{ for(let i=0;i<(s===weak?6:4);i++) bag.push(s); });
-  others.forEach(s=>{ for(let i=0;i<(s===weak?4:2);i++) bag.push(s); });
-  for(let i=0;i<2;i++) bag.push("enigma");
-  return pick(bag);
-}
+function nextStation(){ return pick(PEOPLE[me].capt); }
 function nextQuestion(){
   const st = nextStation();
   let cand = Q.filter(q=>q.s===st && !q.c && q.l===tr.diff);
@@ -714,7 +704,7 @@ function renderBriefing(){
     <div class="eyebrow">Briefing das 8h00 · em frente ao banner da JIEPE</div>
     <h3 style="font-size:26px">Regras do circuito</h3>
     <ul class="rules">
-      <li>Quatro estações, em ordem definida pelas dicas. Uma sala errada custa 1 minuto de caminhada.</li>
+      <li>Você passa pelas suas estações (${PEOPLE[me].capt.length}), em ordem definida pelas dicas. As quatro salas aparecem como opção; uma sala errada custa 1 minuto de caminhada.</li>
       <li>Na entrada de cada estação, o monitor diz se o celular está liberado ou guardado. Liberado: só o líder usa.</li>
       <li>Duas perguntas por estação. Pode consultar o material de bancada da sala.</li>
       <li>Errou: 5 minutos de retenção na estação, contados no relógio.</li>
@@ -728,7 +718,8 @@ function renderBriefing(){
   document.getElementById("go").onclick = startSim;
 }
 function startSim(){
-  const order = shuffle(STATIONS), phones = shuffle([true,true,false,false]);
+  const order = shuffle(PEOPLE[me].capt);
+  const phones = order.length >= 2 ? shuffle([true,false].concat(order.slice(2).map(()=>Math.random()<.5))) : [Math.random()<.5];
   sim = {order, phone:{}, idx:0, start:Date.now(), pen:0, log:order.map(s=>({s, in:null, out:null, err:0, room:0})), lvl:prog().nivel};
   order.forEach((s,i)=>sim.phone[s] = phones[i]);
   showClue();
@@ -739,7 +730,7 @@ function simShell(inner){
   app.innerHTML = topBar() + `
   <div class="clock"><div><div class="eyebrow" style="color:inherit;opacity:.7">Tempo de prova</div><div class="t" id="clk">${fmt(now())}</div></div>
     <div class="pen" id="pen">${penText()}</div></div>
-  <div class="track">${sim.order.map((s,i)=>{ const shown = i<sim.idx || (i===sim.idx && sim.inRoom);
+  <div class="track" style="grid-template-columns:repeat(${sim.order.length},1fr)">${sim.order.map((s,i)=>{ const shown = i<sim.idx || (i===sim.idx && sim.inRoom);
     return `<div class="${i<sim.idx?"done":shown?"now":""}" style="${i<sim.idx?`background:${col(s)};border-color:${col(s)}`:""}">${shown?ST[s].name.split(" ")[0]:"?"}</div>`; }).join("")}</div>
   <section class="panel stack" id="stage">${inner}</section>
   <div class="row" style="margin-top:12px"><button class="linkbtn" id="quit" type="button">Abandonar simulado</button></div>`;
@@ -752,7 +743,7 @@ function showClue(){
   sim.inRoom = false;
   const target = sim.order[sim.idx];
   const left = STATIONS.filter(s=>!sim.order.slice(0,sim.idx).includes(s));
-  simShell(`<div class="eyebrow">Dica ${sim.idx+1} de 4 · para qual sala vocês vão?</div>
+  simShell(`<div class="eyebrow">Dica ${sim.idx+1} de ${sim.order.length} · para qual sala vocês vão?</div>
     <div class="clue">${pick(CLUES[target])}</div>
     <div class="rooms">${shuffle(left).map(s=>`<button class="room" type="button" data-s="${s}" style="color:${col(s)}">${ST[s].name}</button>`).join("")}</div>
     <div id="roomMsg" class="note" aria-live="polite">Sala errada custa 1 minuto.</div>`);
@@ -814,7 +805,7 @@ function showSimQ(){
 function advance(){
   if(sim.qi===0){ sim.qi = 1; showSimQ(); return; }
   sim.log[sim.idx].out = now(); sim.idx++;
-  sim.idx<4 ? showClue() : endSim();
+  sim.idx<sim.order.length ? showClue() : endSim();
 }
 function endSim(){
   clearAll();

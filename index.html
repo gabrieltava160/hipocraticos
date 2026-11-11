@@ -107,6 +107,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--sonja);outline-
 .opt:disabled{cursor:default}
 .numrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}
 .numrow input{font-family:var(--mono);font-size:18px;padding:10px 12px;border:1.5px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);width:min(220px,100%)}
+.numrow input.txtin{font-family:var(--body);width:min(360px,100%)}
+.ordpool{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.ordpool button{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:9px 12px;font-weight:600;text-align:left}
+.ordpool button:hover:not(:disabled){border-color:var(--ink)}
+.ordpool button:disabled{opacity:.3}
+.ordpick{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:6px;counter-reset:o}
+.ordpick li{counter-increment:o;display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:6px;background:var(--grid);font-weight:600}
+.ordpick li::before{content:counter(o);font-family:var(--mono);font-size:12px;color:var(--muted);min-width:1.4em}
+.ordpick li.right{background:var(--okbg);color:var(--ok)} .ordpick li.wrong{background:var(--badbg);color:var(--bad)}
+.hint{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted)}
 .fb{margin-top:16px;padding:14px 16px;border-radius:6px;border-left:4px solid}
 .fb.ok{background:var(--okbg);border-color:var(--ok)}
 .fb.bad{background:var(--badbg);border-color:var(--bad)}
@@ -193,196 +203,330 @@ const PEOPLE = {
 const LV = {1:"Fácil",2:"Médio",3:"Difícil"};
 const ROUND = 8;
 
-/* Banco de questões.
-   mc: {s,l,q,o:[...],a:índice correto,x}
-   num: {s,l,q,n:resposta,t:tolerância absoluta,u:unidade,x} */
+/* ================= Banco de questões =================
+   Tipos:
+   txt  resposta escrita: ac = respostas aceitas (a primeira é a exibida)
+   num  resposta numérica: n = valor, tol = tolerância absoluta, u = unidade
+   mc   múltipla escolha: o = opções, a = índice certo
+   ord  ordenar: o = itens já na ordem correta (a tela embaralha)
+   c:1  questão de consulta (só nas estações com celular liberado do simulado)
+   g    página do guia em PDF que explica o conteúdo
+*/
 const Q = [
-/* ---------- BERTHA LUTZ ---------- */
-{s:"bertha",l:1,q:"Em que ano o Código Eleitoral garantiu às mulheres brasileiras o direito de votar e ser votadas?",o:["1922","1932","1934","1945"],a:1,x:"Decreto nº 21.076, de 24 de fevereiro de 1932, assinado por Getúlio Vargas no Governo Provisório."},
-{s:"bertha",l:1,q:"Que organização Bertha Lutz fundou em 1922?",o:["Liga das Mulheres Eleitoras","Federação Brasileira pelo Progresso Feminino","Comissão sobre a Situação da Mulher","Associação Brasileira de Ciências"],a:1,x:"A FBPF, que ela presidiu por cerca de 20 anos, liderou a campanha pelo sufrágio. Lema: \"Ciência e Trabalho\"."},
-{s:"bertha",l:1,q:"Em que instituição Bertha Lutz trabalhou como bióloga?",o:["Instituto Butantan","Fiocruz","Museu Nacional","Jardim Botânico de São Paulo"],a:2,x:"Entrou no Museu Nacional por concurso em 1919, uma das primeiras mulheres no serviço público federal."},
-{s:"bertha",l:1,q:"Onde Bertha Lutz se formou em Ciências Naturais?",o:["Universidade de São Paulo","Sorbonne, em Paris","Universidade de Cambridge","Universidade de Munique"],a:1,x:"Formou-se na Sorbonne; depois cursou também Direito no Brasil."},
-{s:"bertha",l:1,q:"Qual foi o primeiro país a garantir o voto feminino em nível nacional?",o:["Reino Unido","Estados Unidos","Nova Zelândia","Finlândia"],a:2,x:"Nova Zelândia, 1893. A Finlândia (1906) foi a primeira a permitir que mulheres também fossem eleitas ao parlamento."},
-{s:"bertha",l:1,q:"Em 1945, Bertha ajudou a incluir a igualdade entre homens e mulheres em qual documento?",o:["Declaração Universal dos Direitos Humanos","Carta das Nações Unidas","Convenção CEDAW","Constituição de 1946"],a:1,x:"Na Conferência de São Francisco, como delegada do Brasil. A Declaração Universal é de 1948 e a CEDAW, de 1979."},
-{s:"bertha",l:1,q:"Qual Objetivo de Desenvolvimento Sustentável trata da igualdade de gênero (e é o ODS da JIEPE 2026)?",o:["ODS 3","ODS 4","ODS 5","ODS 10"],a:2,x:"ODS 5 · Igualdade de Gênero."},
-{s:"bertha",l:1,q:"Quem governava o Brasil quando o voto feminino foi instituído em 1932?",o:["Washington Luís","Getúlio Vargas","Eurico Dutra","Júlio Prestes"],a:1,x:"Getúlio Vargas, chefe do Governo Provisório após a Revolução de 1930."},
-{s:"bertha",l:1,q:"O que caracteriza o sufrágio censitário?",o:["O voto depende da renda","O voto depende do sexo","O voto é secreto","O voto é obrigatório"],a:0,x:"Censitário: depende de renda ou propriedade. Capacitário: depende de instrução."},
-{s:"bertha",l:2,q:"Quantas mulheres assinaram a Carta da ONU em 1945?",o:["Uma","Duas","Quatro","Doze"],a:2,x:"Bertha Lutz (Brasil), Minerva Bernardino (República Dominicana), Virginia Gildersleeve (EUA) e Wu Yi-fang (China)."},
-{s:"bertha",l:2,q:"Qual artigo da Carta da ONU impede restrições à participação de homens e mulheres, em igualdade, nos órgãos da organização?",o:["Artigo 1","Artigo 2","Artigo 8","Artigo 51"],a:2,x:"Artigo 8. O Preâmbulo também cita a igualdade de direito dos homens e das mulheres."},
-{s:"bertha",l:2,q:"Quem foi a primeira mulher eleita deputada federal no Brasil, em 1933?",o:["Bertha Lutz","Carlota Pereira de Queirós","Alzira Soriano","Antonieta de Barros"],a:1,x:"Carlota Pereira de Queirós (SP), eleita para a Constituinte. Bertha foi a segunda mulher a ocupar uma cadeira na Câmara."},
-{s:"bertha",l:2,q:"Que estado aprovou, em 1927, uma lei permitindo o voto feminino?",o:["São Paulo","Minas Gerais","Rio Grande do Norte","Rio de Janeiro"],a:2,x:"No RN, Celina Guimarães Viana (Mossoró) se tornou a primeira eleitora do Brasil."},
-{s:"bertha",l:2,q:"Em 1928, Alzira Soriano foi eleita prefeita de Lajes (RN). Qual o pioneirismo dela?",o:["Primeira senadora do Brasil","Primeira prefeita da América Latina","Primeira governadora do Brasil","Primeira ministra do STF"],a:1,x:"Primeira prefeita eleita da América Latina."},
-{s:"bertha",l:2,q:"Por que Bertha Lutz assumiu como deputada federal em 1936?",o:["Foi a mais votada do Rio","Era suplente e o titular, Cândido Pessoa, morreu","Foi nomeada por Vargas","Venceu uma eleição suplementar"],a:1,x:"Eleita 1ª suplente em 1934, assumiu em julho de 1936 com a morte do titular."},
-{s:"bertha",l:2,q:"O que encerrou o mandato de Bertha Lutz em 1937?",o:["Ela renunciou","O golpe do Estado Novo fechou o Congresso","Perdeu a reeleição","Foi cassada pelo STF"],a:1,x:"O Estado Novo (10/11/1937) fechou o Congresso e também a FBPF."},
-{s:"bertha",l:2,q:"Qual foi a primeira Constituição brasileira a prever o voto feminino?",o:["1891","1934","1937","1946"],a:1,x:"A Constituição de 1934 incorporou o voto feminino conquistado em 1932 e baixou a idade mínima para 18 anos."},
-{s:"bertha",l:2,q:"Qual a ordem cronológica correta do voto feminino nacional?",o:["Finlândia → EUA → Brasil → França","EUA → Finlândia → França → Brasil","Brasil → Finlândia → EUA → França","Finlândia → Brasil → EUA → França"],a:0,x:"Finlândia 1906, EUA 1920, Brasil 1932, França 1944."},
-{s:"bertha",l:2,q:"Pela Lei 9.504/1997, qual a regra de cota de gênero nas candidaturas proporcionais?",o:["Mínimo de 20% de mulheres","Mínimo de 30% e máximo de 70% de cada sexo","Metade exata de cada sexo","Mínimo de 30% das cadeiras para mulheres"],a:1,x:"É cota de candidaturas, não de cadeiras: no mínimo 30% e no máximo 70% para cada sexo."},
-{s:"bertha",l:2,q:"Qual é o número da Lei Maria da Penha?",o:["Lei 9.504/1997","Lei 11.340/2006","Lei 13.104/2015","Lei 14.192/2021"],a:1,x:"11.340/2006. A 13.104/2015 é a do feminicídio; a 14.192/2021 trata da violência política contra a mulher."},
-{s:"bertha",l:2,q:"Na eleição de 1932, como era o voto para as mulheres?",o:["Obrigatório, como para os homens","Facultativo","Proibido para casadas","Permitido só a partir de 30 anos"],a:1,x:"O código de 1932 permitia que as mulheres votassem, mas sem obrigatoriedade. A igualdade plena de obrigatoriedade veio com o Código Eleitoral de 1965."},
-{s:"bertha",l:3,q:"Uma cidade tem 15 vagas de vereador e 150.000 votos válidos. Qual é o quociente eleitoral?",n:10000,t:0,u:"votos",x:"QE = válidos ÷ vagas = 150.000 ÷ 15 = 10.000."},
-{s:"bertha",l:3,q:"Com QE = 10.000, um partido recebeu 47.300 votos. Quantas vagas ele ganha diretamente pelo quociente partidário?",n:4,t:0,u:"vagas",x:"QP = 47.300 ÷ 10.000 = 4,73. Despreza-se a fração: 4 vagas diretas. A fração pode render vaga nas sobras."},
-{s:"bertha",l:3,q:"Um partido lança 25 candidaturas a vereador. Qual o número mínimo de candidaturas de cada sexo?",n:8,t:0,u:"candidaturas",x:"30% de 25 = 7,5. O mínimo arredonda para cima: 8."},
-{s:"bertha",l:3,q:"98.765 votos válidos, 9 vagas. Qual o quociente eleitoral (com a regra de arredondamento do Código Eleitoral)?",n:10974,t:0,u:"votos",x:"98.765 ÷ 9 = 10.973,89. Fração maior que 0,5 arredonda para cima: 10.974."},
-{s:"bertha",l:3,q:"Depois do QP, os partidos têm: A 38.000 votos e 3 vagas; B 27.500 e 2; C 18.800 e 1; D 9.000 e 0. Quem leva a primeira vaga das sobras?",o:["A (média 9.500)","B (média 9.167)","C (média 9.400)","D (média 9.000)"],a:0,x:"Média = votos ÷ (vagas + 1). A 38.000/4 = 9.500 é a maior."},
-{s:"bertha",l:3,q:"Método D'Hondt, 5 cadeiras. A = 10.000; B = 6.000; C = 2.800 votos. Quantas cadeiras fica o partido A?",n:3,t:0,u:"cadeiras",x:"Quocientes: A 10.000, 5.000, 3.333; B 6.000, 3.000; C 2.800. Os 5 maiores: 10.000(A), 6.000(B), 5.000(A), 3.333(A), 3.000(B). A = 3, B = 2."},
-{s:"bertha",l:3,q:"Em 2022, as mulheres conquistaram cerca de que fatia da Câmara dos Deputados?",o:["Cerca de 8%","Cerca de 18%","Cerca de 35%","Cerca de 52%"],a:1,x:"91 de 513 (≈17,7%), embora sejam cerca de 52% do eleitorado."},
-{s:"bertha",l:3,q:"Em que ano a ONU adotou a CEDAW (Convenção sobre a Eliminação de Todas as Formas de Discriminação contra a Mulher)?",o:["1945","1948","1975","1979"],a:3,x:"1979. Em 1975 foi o Ano Internacional da Mulher, cuja conferência (Cidade do México) foi o último evento público de Bertha."},
-{s:"bertha",l:3,q:"Qual lei de 2021 tipifica a violência política contra a mulher?",o:["Lei 14.192/2021","Lei 14.154/2021","Lei 14.211/2021","Lei 14.611/2021"],a:0,x:"14.192/2021. A 14.154 é a do teste do pezinho; a 14.211 mexeu nas sobras eleitorais; a 14.611/2023 trata de igualdade salarial."},
-{s:"bertha",l:3,q:"A Lei 14.611/2023, citada por Lula na ONU em homenagem a Bertha, trata de quê?",o:["Cota nas cadeiras do Congresso","Igualdade salarial entre mulheres e homens","Voto feminino obrigatório","Licença-maternidade de 6 meses"],a:1,x:"Igualdade salarial e de critérios remuneratórios entre mulheres e homens."},
+/* ---------------- BERTHA LUTZ ---------------- */
+{s:"bertha",l:1,t:"num",q:"Em que ano o Código Eleitoral garantiu às brasileiras o direito de votar e ser votadas?",n:1932,tol:0,u:"",x:"Decreto nº 21.076, de 24 de fevereiro de 1932, no Governo Provisório de Vargas."},
+{s:"bertha",l:1,t:"txt",q:"Escreva a sigla da organização feminista que Bertha fundou em 1922.",ac:["FBPF","Federação Brasileira pelo Progresso Feminino"],x:"Federação Brasileira pelo Progresso Feminino, que ela presidiu por cerca de 20 anos."},
+{s:"bertha",l:1,t:"txt",q:"Em que museu do Rio de Janeiro Bertha trabalhou como bióloga?",ac:["Museu Nacional"],x:"Entrou por concurso em 1919, uma das primeiras mulheres no serviço público federal."},
+{s:"bertha",l:1,t:"txt",q:"Em que universidade de Paris Bertha estudou Ciências Naturais?",ac:["Sorbonne","Universidade de Paris"],x:"Sorbonne. Depois ela cursou também Direito no Brasil."},
+{s:"bertha",l:1,t:"txt",q:"Qual país foi o primeiro a garantir o voto feminino em nível nacional, em 1893?",ac:["Nova Zelândia"],x:"Nova Zelândia, 1893. Brasil só em 1932."},
+{s:"bertha",l:1,t:"txt",q:"Qual chefe de governo assinou o Código Eleitoral de 1932?",ac:["Getúlio Vargas","Vargas"],x:"Getúlio Vargas, à frente do Governo Provisório após a Revolução de 1930."},
+{s:"bertha",l:1,t:"num",q:"Qual o número do ODS da Agenda 2030 sobre igualdade de gênero (o ODS desta JIEPE)?",n:5,tol:0,u:"",x:"ODS 5 · Igualdade de Gênero."},
+{s:"bertha",l:1,t:"txt",q:"Como bióloga, Bertha estudava sapos, rãs e pererecas. Qual o nome desse grupo de animais?",ac:["anfíbios","anfíbios anuros","anuros","anfibio"],x:"Anfíbios anuros. Algumas espécies receberam nomes em homenagem a ela."},
+{s:"bertha",l:1,t:"txt",q:"Em 1945, Bertha ajudou a pôr a igualdade de gênero no texto de qual documento?",ac:["Carta da ONU","Carta das Nações Unidas"],x:"Na Conferência de São Francisco, como delegada do Brasil."},
+{s:"bertha",l:1,t:"txt",q:"Completar: o voto que o Código de 1932 instituiu, além de feminino, era ______ (ninguém via em quem você votou).",ac:["secreto"],x:"O voto secreto também foi uma novidade de 1932, junto com a criação da Justiça Eleitoral."},
+{s:"bertha",l:2,t:"num",q:"Quantas mulheres assinaram a Carta da ONU em 1945?",n:4,tol:0,u:"",x:"Bertha Lutz (Brasil), Minerva Bernardino (Rep. Dominicana), Virginia Gildersleeve (EUA) e Wu Yi-fang (China)."},
+{s:"bertha",l:2,t:"num",q:"Qual artigo da Carta da ONU impede restrições à participação de homens e mulheres nos órgãos da organização?",n:8,tol:0,u:"",x:"Artigo 8. O Preâmbulo também cita a igualdade de direito dos homens e das mulheres."},
+{s:"bertha",l:2,t:"txt",q:"Quem foi a primeira mulher eleita deputada federal no Brasil, em 1933?",ac:["Carlota Pereira de Queirós","Carlota Pereira de Queiroz","Carlota de Queirós","Carlota"],x:"Carlota Pereira de Queirós (SP). Bertha foi a segunda mulher a ocupar uma cadeira."},
+{s:"bertha",l:2,t:"txt",q:"Que estado aprovou uma lei permitindo o voto feminino já em 1927?",ac:["Rio Grande do Norte","RN"],x:"No RN, Celina Guimarães Viana (Mossoró) se alistou como primeira eleitora do país."},
+{s:"bertha",l:2,t:"txt",q:"Quem foi a primeira eleitora do Brasil, alistada em Mossoró em 1927?",ac:["Celina Guimarães Viana","Celina Guimarães","Celina Viana","Celina"],x:"Celina Guimarães Viana, graças à lei estadual do Rio Grande do Norte."},
+{s:"bertha",l:2,t:"txt",q:"Quem foi eleita em 1928 prefeita de Lajes (RN), a primeira prefeita da América Latina?",ac:["Alzira Soriano"],x:"Alzira Soriano."},
+{s:"bertha",l:2,t:"num",q:"Em que ano Bertha assumiu a cadeira de deputada federal?",n:1936,tol:0,u:"",x:"Julho de 1936, como suplente, após a morte do titular."},
+{s:"bertha",l:2,t:"txt",q:"Que regime fechou o Congresso (e a FBPF) em novembro de 1937?",ac:["Estado Novo"],x:"O Estado Novo de Vargas, instaurado em 10/11/1937."},
+{s:"bertha",l:2,t:"num",q:"Ano da primeira Constituição brasileira que incluiu o voto feminino:",n:1934,tol:0,u:"",x:"A Constituição de 1934, que também baixou a idade de voto para 18 anos."},
+{s:"bertha",l:2,t:"ord",q:"Coloque em ordem cronológica:",o:["Fundação da FBPF","Voto feminino no Código Eleitoral","Primeira deputada federal eleita","Bertha assume como deputada","Assinatura da Carta da ONU"],x:"1922 → 1932 → 1933 → 1936 → 1945."},
+{s:"bertha",l:2,t:"ord",q:"Ordene os países pela data em que adotaram o voto feminino nacional:",o:["Nova Zelândia","Finlândia","Estados Unidos","Brasil","França","Suíça"],x:"1893, 1906, 1920, 1932, 1944, 1971."},
+{s:"bertha",l:2,t:"txt",q:"Como se chama o sufrágio em que só vota quem tem determinada renda?",ac:["censitário","sufrágio censitário","voto censitário"],x:"Censitário. Quando depende de instrução, é capacitário."},
+{s:"bertha",l:2,t:"txt",q:"E o sufrágio que depende do grau de instrução do eleitor?",ac:["capacitário","sufrágio capacitário"],x:"Capacitário. No Brasil, analfabetos só puderam votar a partir de 1985."},
+{s:"bertha",l:2,t:"num",q:"Pela Lei 9.504/1997, qual o percentual mínimo de candidaturas de cada sexo nas eleições proporcionais?",n:30,tol:0,u:"%",x:"Mínimo de 30% e máximo de 70% de cada sexo."},
+{s:"bertha",l:2,t:"num",q:"Escreva só o número da Lei Maria da Penha (sem o ano).",n:11340,tol:0,u:"",x:"Lei nº 11.340/2006."},
+{s:"bertha",l:2,t:"txt",q:"Que direitos são \"votar e ser votado\", na classificação de T. H. Marshall?",ac:["políticos","direitos políticos"],x:"Direitos políticos. Os outros grupos são os civis e os sociais."},
+{s:"bertha",l:2,t:"mc",q:"Sobre o Código Eleitoral de 1932, qual afirmação é FALSA?",o:["Instituiu o voto secreto","Criou a Justiça Eleitoral","Tornou o voto obrigatório para as mulheres","Permitiu que mulheres fossem votadas"],a:2,x:"Para as mulheres o voto era facultativo; a obrigatoriedade igual veio no Código Eleitoral de 1965."},
+{s:"bertha",l:2,t:"mc",q:"Qual destes cargos é eleito pelo sistema proporcional?",o:["Senador","Governador","Deputado federal","Prefeito"],a:2,x:"Deputados e vereadores: proporcional. Senador, governador, prefeito e presidente: majoritário."},
+{s:"bertha",l:2,t:"txt",q:"Escreva a sigla da convenção da ONU de 1979 contra a discriminação da mulher.",ac:["CEDAW"],x:"Convenção sobre a Eliminação de Todas as Formas de Discriminação contra a Mulher."},
+{s:"bertha",l:3,t:"num",q:"Qual era a idade mínima para votar pelo Código Eleitoral de 1932?",n:21,tol:0,u:"anos",x:"21 anos. A Constituição de 1934 baixou para 18."},
+{s:"bertha",l:3,t:"txt",q:"Como se chamava o deputado titular cuja morte levou Bertha à Câmara?",ac:["Cândido Pessoa"],x:"Cândido Pessoa; Bertha era a 1ª suplente."},
+{s:"bertha",l:3,t:"txt",q:"Qual delegada da República Dominicana fez dupla com Bertha em São Francisco?",ac:["Minerva Bernardino"],x:"Minerva Bernardino, também signatária da Carta."},
+{s:"bertha",l:3,t:"txt",q:"Que comissão da ONU, criada em 1946, nasceu dessa luta pela igualdade?",ac:["Comissão sobre a Situação da Mulher","Comissão sobre o Status da Mulher","CSW"],x:"Comissão sobre a Situação da Mulher (CSW), do ECOSOC."},
+{s:"bertha",l:3,t:"txt",q:"Em que cidade foi a conferência da ONU de 1975, último compromisso público de Bertha?",ac:["Cidade do México","México"],x:"Conferência Mundial do Ano Internacional da Mulher, Cidade do México."},
+{s:"bertha",l:3,t:"num",q:"A Lei 14.611, citada por Lula na ONU ao homenagear Bertha, trata de igualdade salarial. De que ano é?",n:2023,tol:0,u:"",x:"Lei 14.611/2023."},
+{s:"bertha",l:3,t:"txt",q:"Qual lei de 2021 tipifica a violência política contra a mulher? Escreva no formato número/ano.",ac:["14.192/2021","14192/2021","14192","14.192"],x:"Lei 14.192/2021."},
+{s:"bertha",l:3,t:"txt",q:"Qual o lema da FBPF?",ac:["Ciência e Trabalho"],x:"\"Ciência e Trabalho\": conquistar direitos e preparar as mulheres para exercê-los."},
+{s:"bertha",l:3,t:"mc",q:"Por que delegações como a britânica resistiram a citar a igualdade de gênero na Carta?",o:["Achavam a menção desnecessária","Queriam incluir só o voto","Eram contra a criação da ONU","Preferiam incluir na Declaração de 1948"],a:0,x:"Argumentavam que era desnecessário; as latino-americanas lideradas por Bertha insistiram e venceram."},
+{s:"bertha",l:3,t:"num",q:"Em 2022, quantas mulheres foram eleitas para as 513 cadeiras da Câmara?",n:91,tol:0,u:"",x:"91 deputadas, cerca de 18%, embora as mulheres sejam cerca de 52% do eleitorado."},
+{s:"bertha",l:3,t:"txt",q:"Pela EC 117/2022, que recurso deve ter ao menos 30% destinado a candidaturas femininas? (além do tempo de propaganda)",ac:["fundo eleitoral","fundo especial de financiamento de campanha","FEFC","fundo partidário"],x:"O fundo eleitoral (FEFC), além do tempo de rádio e TV."},
+{s:"bertha",l:3,c:1,t:"txt",q:"Qual o nome do pai de Bertha, pioneiro da medicina tropical no Brasil?",ac:["Adolpho Lutz","Adolfo Lutz"],x:"Adolpho Lutz. A mãe era a enfermeira inglesa Amy Fowler."},
+{s:"bertha",l:3,c:1,t:"num",q:"Qual o número do decreto do Código Eleitoral de 1932? (só o número)",n:21076,tol:0,u:"",x:"Decreto nº 21.076, de 24/02/1932."},
+{s:"bertha",l:3,c:1,t:"txt",q:"Em que dia e mês de 1945 a Carta da ONU entrou em vigor?",ac:["24 de outubro","24/10","24 outubro","24/10/1945"],x:"24 de outubro, Dia das Nações Unidas. Foi assinada em 26 de junho."},
+{s:"bertha",l:3,c:1,t:"txt",q:"Em que cidade a Carta das Nações Unidas foi assinada?",ac:["São Francisco","San Francisco"],x:"São Francisco, EUA, em 26/06/1945."},
+{s:"bertha",l:3,c:1,t:"txt",q:"Em que dia e mês de 1932 o Código Eleitoral foi assinado?",ac:["24 de fevereiro","24/02","24 fevereiro","24/02/1932"],x:"24 de fevereiro de 1932. O Dia da Conquista do Voto Feminino é comemorado nessa data."},
 
-/* ---------- SONJA ASHAUER ---------- */
-{s:"sonja",l:1,q:"Quem orientou Sonja Ashauer no doutorado em Cambridge?",o:["Albert Einstein","Paul Dirac","Niels Bohr","Gleb Wataghin"],a:1,x:"Paul Dirac, Nobel de Física de 1933. Wataghin foi seu professor na USP."},
-{s:"sonja",l:1,q:"Em que universidade Sonja se formou em física, em 1942?",o:["UFRJ","Unicamp","USP","UFMG"],a:2,x:"Universidade de São Paulo, aluna de Gleb Wataghin."},
-{s:"sonja",l:1,q:"Com que idade Sonja Ashauer morreu, em 1948?",o:["22","25","31","40"],a:1,x:"Aos 25 anos, poucos meses depois de voltar ao Brasil."},
-{s:"sonja",l:1,q:"Qual a definição do índice de refração de um meio?",o:["n = v/c","n = c/v","n = λ·f","n = sen θ"],a:1,x:"n = c/v. Quanto maior n, mais lenta a luz no meio."},
-{s:"sonja",l:1,q:"Que lente corrige a miopia?",o:["Convergente","Divergente","Cilíndrica","Bifocal convergente"],a:1,x:"Divergente. Hipermetropia e presbiopia: convergente. Astigmatismo: cilíndrica."},
-{s:"sonja",l:1,q:"Como se liga um voltímetro no circuito?",o:["Em série","Em paralelo","Com o circuito desligado","Entre o fio e a terra"],a:1,x:"Voltímetro em paralelo; amperímetro em série; ohmímetro com o circuito desligado."},
-{s:"sonja",l:1,q:"Como se mede corrente com um amperímetro?",o:["Em paralelo com o resistor","Em série, abrindo o circuito","Com a fonte desligada","Encostando nos dois polos da fonte"],a:1,x:"Em série. Ligar um amperímetro em paralelo pode queimar o fusível do aparelho."},
-{s:"sonja",l:1,q:"No espectro visível, qual cor tem o maior comprimento de onda?",o:["Violeta","Verde","Azul","Vermelho"],a:3,x:"Vermelho (≈700 nm). Violeta é o menor (≈400 nm)."},
-{s:"sonja",l:1,q:"Qual antipartícula a equação de Dirac previu, detectada por Anderson em 1932?",o:["Neutrino","Pósitron","Antipróton","Múon"],a:1,x:"O pósitron, antipartícula do elétron."},
-{s:"sonja",l:1,q:"Para medir uma resistência com o ohmímetro, o circuito deve estar…",o:["Ligado na fonte","Desligado","Em curto","Com o amperímetro junto"],a:1,x:"Desligado, de preferência com o resistor isolado do resto do circuito."},
-{s:"sonja",l:2,q:"Qual o ângulo limite para luz saindo da água (n = 1,33) para o ar? (em graus)",n:48.8,t:0.6,u:"°",x:"sen θc = 1/1,33 = 0,752 → θc ≈ 48,8°."},
-{s:"sonja",l:2,q:"Lente convergente, f = 10 cm, objeto a 15 cm. Como é a imagem?",o:["Real, invertida, 2× maior, a 30 cm","Virtual, direita, 2× maior, a 30 cm","Real, invertida, menor, a 6 cm","Virtual, direita, menor, a 6 cm"],a:0,x:"1/p' = 1/10 − 1/15 = 1/30 → p' = 30 cm. A = −30/15 = −2."},
-{s:"sonja",l:2,q:"Objeto entre o foco e uma lente convergente (lupa). Como é a imagem?",o:["Real, invertida, maior","Real, direita, menor","Virtual, direita, maior","Virtual, invertida, menor"],a:2,x:"Antes do foco, a convergente forma imagem virtual, direita e ampliada."},
-{s:"sonja",l:2,q:"Resistor com faixas amarelo, violeta, vermelho, ouro. Valor em ohms?",n:4700,t:0,u:"Ω",x:"Amarelo 4, violeta 7 → 47; vermelho multiplica por 10² → 4.700 Ω (4,7 kΩ), ouro ±5%."},
-{s:"sonja",l:2,q:"Resistores de 100 Ω e 300 Ω em paralelo. Resistência equivalente?",n:75,t:0,u:"Ω",x:"(100 × 300) ÷ (100 + 300) = 30.000 ÷ 400 = 75 Ω."},
-{s:"sonja",l:2,q:"Energia de um fóton de laser verde (532 nm), em eV.",n:2.33,t:0.03,u:"eV",x:"E = hc/λ ≈ 1240 eV·nm ÷ 532 nm ≈ 2,33 eV."},
-{s:"sonja",l:2,q:"Luz não polarizada passa por dois polarizadores com eixos a 60°. Que fração da intensidade sai?",o:["1/2","1/4","1/8","3/8"],a:2,x:"1º polarizador: I₀/2. Malus: ×cos² 60° = ×1/4. Total: I₀/8."},
-{s:"sonja",l:2,q:"Resistor de 10 Ω percorrido por 2 A. Potência dissipada?",n:40,t:0,u:"W",x:"P = R·i² = 10 × 4 = 40 W."},
-{s:"sonja",l:2,q:"Qual era o tema da tese de Sonja em Cambridge (1948)?",o:["Radioatividade natural","Eletrodinâmica quântica: elétrons e radiação eletromagnética","Relatividade geral","Física nuclear de raios cósmicos"],a:1,x:"Problems on Electrons and Electromagnetic Radiation, em eletrodinâmica quântica."},
-{s:"sonja",l:2,q:"A constante de estrutura fina, que mede a intensidade da interação eletromagnética, vale aproximadamente…",o:["1/10","1/137","1/1836","6,63 × 10⁻³⁴"],a:1,x:"α ≈ 1/137. 1836 é a razão massa do próton / massa do elétron; 6,63 × 10⁻³⁴ é h."},
-{s:"sonja",l:2,q:"Sonja foi a primeira brasileira eleita membro de qual sociedade?",o:["Royal Society","Cambridge Philosophical Society","Academia Brasileira de Ciências","Sociedade Brasileira de Física"],a:1,x:"Cambridge Philosophical Society."},
-{s:"sonja",l:2,q:"Frequência de um laser de 650 nm, em unidades de 10¹⁴ Hz.",n:4.62,t:0.05,u:"× 10¹⁴ Hz",x:"f = c/λ = 3,00 × 10⁸ ÷ 650 × 10⁻⁹ ≈ 4,62 × 10¹⁴ Hz."},
-{s:"sonja",l:2,q:"Transformador: 110 V no primário de 500 espiras. Tensão no secundário de 50 espiras?",n:11,t:0,u:"V",x:"U₂ = U₁ × N₂/N₁ = 110 × 50/500 = 11 V."},
-{s:"sonja",l:2,q:"A equação de Dirac (1928) uniu quais teorias?",o:["Mecânica clássica e termodinâmica","Mecânica quântica e relatividade especial","Relatividade geral e eletromagnetismo","Óptica e gravitação"],a:1,x:"Descreve o elétron de modo quântico e relativístico, explica o spin e prevê a antimatéria."},
-{s:"sonja",l:3,q:"Laser de 650 nm numa rede de 600 linhas/mm. Ângulo do 1º máximo, em graus?",n:22.95,t:0.5,u:"°",x:"d = 1/600 mm = 1,667 µm. sen θ = 0,650/1,667 = 0,390 → θ ≈ 23,0°."},
-{s:"sonja",l:3,q:"Mesma rede (600 linhas/mm) e laser de 650 nm: qual a maior ordem de difração visível?",n:2,t:0,u:"",x:"m < d/λ = 1,667/0,650 = 2,56 → ordem máxima 2."},
-{s:"sonja",l:3,q:"Fenda dupla: d = 0,25 mm, anteparo a 2,0 m, laser de 650 nm. Distância entre franjas claras, em mm?",n:5.2,t:0.1,u:"mm",x:"Δy = λL/d = 650 × 10⁻⁹ × 2,0 ÷ 0,25 × 10⁻³ = 5,2 × 10⁻³ m."},
-{s:"sonja",l:3,q:"Ângulo de Brewster para luz do ar incidindo em vidro de n = 1,50, em graus?",n:56.3,t:0.5,u:"°",x:"tan θB = 1,50 → θB ≈ 56,3°. Nesse ângulo, a luz refletida é totalmente polarizada."},
-{s:"sonja",l:3,q:"Uma lente de +2,5 dioptrias tem distância focal de quantos centímetros?",n:40,t:0,u:"cm",x:"f = 1/V = 1/2,5 = 0,40 m = 40 cm."},
-{s:"sonja",l:3,q:"Hidrogênio: comprimento de onda da transição n = 3 → n = 2, em nm (R = 1,097 × 10⁷ m⁻¹).",n:656,t:3,u:"nm",x:"1/λ = R(1/4 − 1/9) = 1,524 × 10⁶ m⁻¹ → λ ≈ 656 nm (linha vermelha de Balmer)."},
-{s:"sonja",l:3,q:"Duas cargas de 1 µC a 10 cm uma da outra. Força elétrica, em newtons (k = 9 × 10⁹)?",n:0.9,t:0.02,u:"N",x:"F = k·q²/r² = 9 × 10⁹ × 10⁻¹² ÷ 0,01 = 0,9 N."},
-{s:"sonja",l:3,q:"Série de 100 Ω e 300 Ω ligada a 12 V. Tensão sobre o resistor de 300 Ω?",n:9,t:0,u:"V",x:"i = 12/400 = 0,03 A. U = 300 × 0,03 = 9 V."},
-{s:"sonja",l:3,q:"Fotoelétrico: luz de 400 nm em metal com função trabalho de 2,3 eV. Energia cinética máxima dos elétrons, em eV?",n:0.8,t:0.03,u:"eV",x:"hf = 1240/400 = 3,10 eV. Ec = 3,10 − 2,30 = 0,80 eV."},
+/* ---------------- SONJA ASHAUER ---------------- */
+{s:"sonja",l:1,t:"txt",q:"Quem orientou o doutorado de Sonja em Cambridge?",ac:["Paul Dirac","Dirac"],x:"Paul Dirac, Nobel de Física de 1933."},
+{s:"sonja",l:1,t:"txt",q:"Em que universidade inglesa Sonja fez o doutorado?",ac:["Cambridge","Universidade de Cambridge"],x:"Cambridge, onde se doutorou em janeiro de 1948."},
+{s:"sonja",l:1,t:"num",q:"Em que ano Sonja se formou em física na USP?",n:1942,tol:0,u:"",x:"1942, aluna de Gleb Wataghin."},
+{s:"sonja",l:1,t:"num",q:"Com quantos anos Sonja morreu?",n:25,tol:0,u:"anos",x:"Aos 25 anos, em agosto de 1948, poucos meses depois de voltar ao Brasil."},
+{s:"sonja",l:1,t:"txt",q:"Qual antipartícula do elétron a equação de Dirac previu?",ac:["pósitron","positrão","antielétron"],x:"O pósitron, detectado por Carl Anderson em 1932."},
+{s:"sonja",l:1,t:"txt",q:"Que tipo de lente corrige a miopia?",ac:["divergente","lente divergente"],x:"Divergente. Hipermetropia: convergente."},
+{s:"sonja",l:1,t:"txt",q:"O voltímetro é ligado em série ou em paralelo?",ac:["paralelo","em paralelo"],x:"Em paralelo. O amperímetro vai em série."},
+{s:"sonja",l:1,t:"txt",q:"O amperímetro é ligado em série ou em paralelo?",ac:["série","em série","serie"],x:"Em série, abrindo o circuito."},
+{s:"sonja",l:1,t:"txt",q:"Qual cor do visível tem o maior comprimento de onda?",ac:["vermelho","vermelha"],x:"Vermelho, perto de 700 nm. Violeta é o menor, perto de 400 nm."},
+{s:"sonja",l:1,t:"txt",q:"Como se chama a partícula de luz?",ac:["fóton","foton"],x:"Fóton, com energia E = hf."},
+{s:"sonja",l:1,t:"txt",q:"Como se chama a separação da luz branca em cores num prisma?",ac:["dispersão","dispersao"],x:"Dispersão: o índice de refração varia com o comprimento de onda."},
+{s:"sonja",l:1,t:"txt",q:"Qual a unidade de vergência de uma lente?",ac:["dioptria","di","dioptrias"],x:"Dioptria (di) = 1/f com f em metros."},
+{s:"sonja",l:2,t:"txt",q:"Quem foi o professor de Sonja na USP?",ac:["Gleb Wataghin","Wataghin"],x:"Gleb Wataghin, que estruturou a física da USP a partir de 1934."},
+{s:"sonja",l:2,t:"txt",q:"Que lente corrige a hipermetropia?",ac:["convergente","lente convergente"],x:"Convergente, assim como a presbiopia."},
+{s:"sonja",l:2,t:"txt",q:"E o astigmatismo, com que tipo de lente se corrige?",ac:["cilíndrica","lente cilíndrica","cilindrica"],x:"Lente cilíndrica."},
+{s:"sonja",l:2,t:"txt",q:"Acima do ângulo limite, a luz não sai do meio mais refringente. Como se chama o fenômeno?",ac:["reflexão interna total","reflexão total","reflexao total"],x:"Reflexão interna total: é o princípio da fibra óptica e do brilho do diamante."},
+{s:"sonja",l:2,t:"txt",q:"Qual a sigla em inglês da eletrodinâmica quântica, área da tese de Sonja?",ac:["QED"],x:"QED, quantum electrodynamics."},
+{s:"sonja",l:2,t:"num",q:"A constante de estrutura fina vale aproximadamente 1/x. Qual o x?",n:137,tol:0,u:"",x:"α ≈ 1/137."},
+{s:"sonja",l:2,t:"txt",q:"Sonja foi a primeira brasileira eleita para qual sociedade científica de Cambridge?",ac:["Cambridge Philosophical Society","Philosophical Society","Sociedade Filosófica de Cambridge"],x:"Cambridge Philosophical Society."},
+{s:"sonja",l:2,t:"txt",q:"De quem é a lei I = I₀ cos²θ, para luz atravessando um polarizador?",ac:["Malus","lei de Malus"],x:"Lei de Malus."},
+{s:"sonja",l:2,t:"txt",q:"Como se chama o ângulo em que a luz refletida sai totalmente polarizada?",ac:["Brewster","ângulo de Brewster"],x:"Ângulo de Brewster: tan θB = n₂/n₁."},
+{s:"sonja",l:2,t:"txt",q:"Emissão de elétrons por um metal iluminado: como se chama o efeito?",ac:["efeito fotoelétrico","fotoelétrico","fotoeletrico"],x:"Efeito fotoelétrico: Ec = hf − φ."},
+{s:"sonja",l:2,t:"num",q:"Quantas são as equações de Maxwell?",n:4,tol:0,u:"",x:"Quatro: Gauss, Gauss para o magnetismo, Faraday e Ampère-Maxwell."},
+{s:"sonja",l:2,t:"num",q:"No código de cores, a faixa dourada indica tolerância de quantos por cento?",n:5,tol:0,u:"%",x:"Ouro ±5%, prata ±10%."},
+{s:"sonja",l:2,t:"num",q:"Qual o índice de refração da água?",n:1.33,tol:0.01,u:"",x:"≈ 1,33. Vidro ≈ 1,5; diamante ≈ 2,42."},
+{s:"sonja",l:2,t:"ord",q:"Ordene do menor para o maior comprimento de onda:",o:["Violeta","Azul","Verde","Amarelo","Vermelho"],x:"≈ 400 nm (violeta) até ≈ 700 nm (vermelho)."},
+{s:"sonja",l:2,t:"ord",q:"Ordene do menor para o maior índice de refração:",o:["Ar","Água","Vidro comum","Diamante"],x:"1,00 · 1,33 · ≈1,5 · 2,42."},
+{s:"sonja",l:2,t:"ord",q:"Ordene pela frequência crescente:",o:["Ondas de rádio","Micro-ondas","Infravermelho","Luz visível","Ultravioleta","Raios X"],x:"Mais frequência, menor comprimento de onda e mais energia por fóton."},
+{s:"sonja",l:2,t:"ord",q:"Código de cores: ordene as cores do dígito 0 ao 4.",o:["Preto","Marrom","Vermelho","Laranja","Amarelo"],x:"0 preto, 1 marrom, 2 vermelho, 3 laranja, 4 amarelo."},
+{s:"sonja",l:2,t:"mc",q:"Objeto entre o foco e uma lente convergente (lupa). Como é a imagem?",o:["Real, invertida, maior","Virtual, direita, maior","Real, direita, menor","Virtual, invertida, menor"],a:1,x:"Antes do foco, a convergente forma imagem virtual, direita e ampliada."},
+{s:"sonja",l:2,t:"mc",q:"Em um circuito série, o que é igual em todos os resistores?",o:["A tensão","A corrente","A potência","A resistência"],a:1,x:"Série: mesma corrente. Paralelo: mesma tensão."},
+{s:"sonja",l:3,t:"txt",q:"Cite um dos três físicos que dividiram o Nobel de 1965 pela renormalização da QED.",ac:["Feynman","Schwinger","Tomonaga","Richard Feynman","Julian Schwinger","Sin-Itiro Tomonaga"],x:"Feynman, Schwinger e Tomonaga."},
+{s:"sonja",l:3,t:"txt",q:"Qual o nome (em inglês) da tese de Sonja? Basta escrever as palavras principais.",ac:["Problems on Electrons and Electromagnetic Radiation","electrons and electromagnetic radiation","problems on electrons"],x:"Problems on Electrons and Electromagnetic Radiation (1948)."},
+{s:"sonja",l:3,t:"num",q:"Em que ano Dirac publicou sua equação relativística do elétron?",n:1928,tol:0,u:"",x:"1928."},
+{s:"sonja",l:3,t:"mc",q:"Por que a equação de Dirac foi revolucionária?",o:["Explicou a gravidade quântica","Uniu mecânica quântica e relatividade especial para o elétron","Descobriu o nêutron","Mediu a velocidade da luz"],a:1,x:"Ela explica o spin e prevê a antimatéria."},
+{s:"sonja",l:3,t:"txt",q:"Qual técnica resolveu os \"infinitos\" da QED no fim dos anos 1940?",ac:["renormalização","renormalizacao"],x:"Renormalização."},
+{s:"sonja",l:3,t:"num",q:"Comprimento de onda da linha vermelha de Balmer do hidrogênio (n = 3 → 2), em nm:",n:656,tol:3,u:"nm",x:"≈ 656 nm. As outras linhas visíveis: 486, 434 e 410 nm."},
+{s:"sonja",l:3,t:"num",q:"Energia do estado fundamental do hidrogênio, em eV (com sinal):",n:-13.6,tol:0.05,u:"eV",x:"E₁ = −13,6 eV; Eₙ = −13,6/n²."},
+{s:"sonja",l:3,c:1,t:"num",q:"Em que ano Dirac recebeu o Nobel de Física?",n:1933,tol:0,u:"",x:"1933, dividido com Erwin Schrödinger."},
+{s:"sonja",l:3,c:1,t:"txt",q:"Com quem Dirac dividiu o Nobel de 1933?",ac:["Schrödinger","Erwin Schrödinger","Schrodinger"],x:"Erwin Schrödinger. Heisenberg recebeu o de 1932."},
+{s:"sonja",l:3,c:1,t:"num",q:"Qual o valor exato da velocidade da luz no vácuo, em m/s?",n:299792458,tol:0,u:"m/s",x:"299.792.458 m/s, exato por definição do metro."},
+{s:"sonja",l:3,c:1,t:"num",q:"Em que ano Carl Anderson detectou o pósitron?",n:1932,tol:0,u:"",x:"1932, em raios cósmicos."},
+{s:"sonja",l:3,c:1,t:"num",q:"Qual o índice de refração do diamante?",n:2.42,tol:0.02,u:"",x:"≈ 2,42."},
 
-/* ---------- VIRGINIA APGAR ---------- */
-{s:"apgar",l:1,q:"Quantos sinais compõem o Escore de Apgar?",n:5,t:0,u:"sinais",x:"Cor, frequência cardíaca, irritabilidade reflexa, tônus e esforço respiratório."},
-{s:"apgar",l:1,q:"Qual a nota máxima do Escore de Apgar?",n:10,t:0,u:"",x:"5 sinais × 2 pontos = 10."},
-{s:"apgar",l:1,q:"Em que momentos o Apgar é avaliado de rotina?",o:["Ao nascer e com 1 hora","No 1º e no 5º minuto","No 5º e no 10º minuto","A cada hora no primeiro dia"],a:1,x:"No 1º e no 5º minuto após o nascimento."},
-{s:"apgar",l:1,q:"Qual era a especialidade de Virginia Apgar?",o:["Pediatria","Obstetrícia","Anestesiologia","Cardiologia"],a:2,x:"Anestesista. Começou na cirurgia e migrou para a anestesia."},
-{s:"apgar",l:1,q:"Recém-nascido com FC de 130 bpm recebe quanto no item pulso?",o:["0","1","2"],a:2,x:"≥ 100 bpm = 2; < 100 = 1; ausente = 0."},
-{s:"apgar",l:1,q:"Corpo rosado com mãos e pés azulados (acrocianose). Nota no item cor?",o:["0","1","2"],a:1,x:"Acrocianose = 1. Só todo rosado leva 2; cianose ou palidez generalizada = 0."},
-{s:"apgar",l:1,q:"Apgar de 8 no 5º minuto é classificado como…",o:["Baixo","Moderadamente anormal","Normal/tranquilizador"],a:2,x:"7–10 normal; 4–6 moderadamente anormal; 0–3 baixo."},
-{s:"apgar",l:1,q:"Qual destas doenças está no teste do pezinho básico do SUS?",o:["Catarata congênita","Fenilcetonúria","Surdez congênita","Coarctação de aorta"],a:1,x:"Os 6 grupos básicos: fenilcetonúria, hipotireoidismo congênito, doença falciforme/hemoglobinopatias, fibrose cística, hiperplasia adrenal congênita e deficiência de biotinidase."},
-{s:"apgar",l:1,q:"O teste do coraçãozinho é feito com…",o:["Eletrocardiograma","Ausculta","Oximetria de pulso","Ecocardiograma"],a:2,x:"Oximetria de pulso no membro superior direito e em um membro inferior."},
-{s:"apgar",l:1,q:"O teste do olhinho avalia…",o:["Acuidade visual","Reflexo vermelho","Pressão intraocular","Movimentos oculares"],a:1,x:"Reflexo vermelho: rastreia catarata congênita, retinoblastoma e glaucoma."},
-{s:"apgar",l:2,q:"1º minuto: FC 80, respiração fraca e irregular, alguma flexão, careta à aspiração, acrocianose. Apgar?",n:5,t:0,u:"",x:"1 + 1 + 1 + 1 + 1 = 5 (moderadamente anormal)."},
-{s:"apgar",l:2,q:"5º minuto: FC 140, choro forte, movimento ativo, espirra ao estímulo, acrocianose. Apgar?",n:9,t:0,u:"",x:"2 + 2 + 2 + 2 + 1 = 9."},
-{s:"apgar",l:2,q:"1º minuto: sem FC detectável, apneia, flácido, sem resposta, cianose generalizada. Apgar?",n:0,t:0,u:"",x:"Todos os sinais em 0."},
-{s:"apgar",l:2,q:"Se o Apgar do 5º minuto for menor que 7, o que se faz?",o:["Nada, só registrar","Repetir a cada 5 min até 20 min","Repetir só com 1 hora","Repetir a cada minuto até chegar a 10"],a:1,x:"Repete-se a cada 5 minutos até 20 minutos de vida."},
-{s:"apgar",l:2,q:"Segundo a própria Apgar, qual sinal tinha maior valor diagnóstico e prognóstico?",o:["Cor","Frequência cardíaca","Tônus","Irritabilidade reflexa"],a:1,x:"A frequência cardíaca. A cor, ao contrário, raramente recebe 2."},
-{s:"apgar",l:2,q:"Em que ano o escore foi publicado?",o:["1949","1953","1959","1962"],a:1,x:"Apresentado em 1952 e publicado em 1953, com 1.021 recém-nascidos."},
-{s:"apgar",l:2,q:"Teste do coraçãozinho normal:",o:["SpO₂ ≥ 90% em qualquer membro","SpO₂ ≥ 95% no MSD e no MI, diferença ≤ 3%","SpO₂ ≥ 95% só no MSD","Diferença ≥ 4% entre MSD e MI"],a:1,x:"≥ 95% nas duas medidas e diferença de até 3%."},
-{s:"apgar",l:2,q:"Em que janela de tempo se faz o teste do coraçãozinho?",o:["Na sala de parto","Entre 24 e 48 h de vida","Entre o 3º e o 5º dia","Com 1 mês"],a:1,x:"Entre 24 e 48 horas, antes da alta, em RN com idade gestacional acima de 34–35 semanas."},
-{s:"apgar",l:2,q:"Quando se colhe idealmente o teste do pezinho?",o:["Nas primeiras 6 horas","Entre o 3º e o 5º dia de vida","Com 15 dias","Com 1 mês"],a:1,x:"Entre o 3º e o 5º dia, após pelo menos 48 h de alimentação."},
-{s:"apgar",l:2,q:"A Lei 14.154/2021 prevê a ampliação do teste do pezinho em quantas etapas?",n:5,t:0,u:"etapas",x:"5 etapas, chegando a 14 grupos de doenças (mais de 50 doenças); a última inclui a AME."},
-{s:"apgar",l:2,q:"Baixo peso ao nascer é definido como…",o:["< 3.000 g","< 2.500 g","< 1.500 g","< 1.000 g"],a:1,x:"< 2.500 g. Muito baixo < 1.500 g; extremo baixo < 1.000 g."},
-{s:"apgar",l:2,q:"1.500 nascidos vivos e 12 óbitos de menores de 1 ano. Taxa de mortalidade infantil (por mil)?",n:8,t:0,u:"‰",x:"12 ÷ 1.500 × 1.000 = 8,0 por mil nascidos vivos."},
-{s:"apgar",l:2,q:"Recém-nascido pré-termo é aquele com idade gestacional…",o:["< 34 semanas","< 37 semanas","< 39 semanas","< 42 semanas"],a:1,x:"< 37 semanas. Termo: 37 a 41s6d. Pós-termo: ≥ 42."},
-{s:"apgar",l:2,q:"Frequência cardíaca normal do recém-nascido:",o:["60–100 bpm","80–120 bpm","120–160 bpm","180–220 bpm"],a:2,x:"120–160 bpm. FR 40–60 irpm."},
-{s:"apgar",l:2,q:"O período neonatal precoce vai de…",o:["0 a 6 dias","0 a 27 dias","7 a 27 dias","28 a 364 dias"],a:0,x:"Precoce 0–6 dias; tardio 7–27; pós-neonatal 28–364."},
-{s:"apgar",l:3,q:"De quantas combinações diferentes dos 5 sinais resulta um Apgar 8?",n:15,t:0,u:"",x:"Dois sinais com 1 (C(5,2) = 10) ou um sinal com 0 (5): 15."},
-{s:"apgar",l:3,q:"De quantas combinações resulta um Apgar 9?",n:5,t:0,u:"",x:"Um único sinal com nota 1: 5 possibilidades."},
-{s:"apgar",l:3,q:"Quantas combinações de notas são possíveis no Apgar (5 sinais, 3 notas cada)?",n:243,t:0,u:"",x:"3⁵ = 243."},
-{s:"apgar",l:3,q:"Doença com prevalência de 1:10.000; teste com sensibilidade 99% e especificidade 99,5%. VPP em %?",n:1.9,t:0.2,u:"%",x:"Em 100.000: VP = 9,9; FP = 0,5% de 99.990 ≈ 500. VPP = 9,9 ÷ 509,9 ≈ 1,9%."},
-{s:"apgar",l:3,q:"RN nasceu com 3.400 g e pesa 3.100 g no 3º dia. Perda percentual?",n:8.8,t:0.1,u:"%",x:"300 ÷ 3.400 = 8,8%, dentro do esperado (até ≈10%)."},
-{s:"apgar",l:3,q:"Bactéria que dobra a cada 20 min. Partindo de 1.000 células, quantas haverá em 2 h?",n:64000,t:0,u:"células",x:"6 duplicações: 1.000 × 2⁶ = 64.000."},
-{s:"apgar",l:3,q:"Coraçãozinho: MSD 97%, membro inferior 93%. Conduta (fluxograma SBP 2022)?",o:["Normal: alta","Duvidoso: repetir em 1 hora","Alterado: ecocardiograma imediato","Repetir em 24 h"],a:1,x:"Diferença de 4% (≥ 4%) = duvidoso. Repete em 1 hora."},
-{s:"apgar",l:3,q:"Teste com 90 verdadeiro-positivos e 10 falso-negativos. Sensibilidade em %?",n:90,t:0,u:"%",x:"VP ÷ (VP + FN) = 90 ÷ 100 = 90%."},
-{s:"apgar",l:3,q:"950 verdadeiro-negativos e 50 falso-positivos. Especificidade em %?",n:95,t:0,u:"%",x:"VN ÷ (VN + FP) = 950 ÷ 1.000 = 95%."},
-{s:"apgar",l:3,q:"Sensibilidade 90% e especificidade 95%. Razão de verossimilhança positiva?",n:18,t:0.1,u:"",x:"RV+ = sens ÷ (1 − esp) = 0,90 ÷ 0,05 = 18."},
-{s:"apgar",l:3,q:"Na reanimação neonatal, o RN segue com FC < 100 bpm após os passos iniciais. Próximo passo?",o:["Massagem cardíaca","Ventilação com pressão positiva","Adrenalina","Aguardar o Apgar de 5 min"],a:1,x:"FC < 100: VPP. FC < 60 após ventilação adequada: massagem (3:1). O Apgar não decide o início da reanimação."},
-{s:"apgar",l:3,q:"Se todas as 243 combinações fossem igualmente prováveis, quantas dariam Apgar ≥ 7?",n:51,t:0,u:"",x:"Combinações para 7, 8, 9, 10: 30 + 15 + 5 + 1 = 51."},
+/* ---------------- VIRGINIA APGAR ---------------- */
+{s:"apgar",l:1,t:"num",q:"Quantos sinais compõem o Escore de Apgar?",n:5,tol:0,u:"",x:"Cor, frequência cardíaca, irritabilidade reflexa, tônus e respiração."},
+{s:"apgar",l:1,t:"num",q:"Qual a nota máxima do Apgar?",n:10,tol:0,u:"",x:"5 sinais × 2 pontos."},
+{s:"apgar",l:1,t:"num",q:"Além do 1º minuto, em que minuto o Apgar é feito de rotina?",n:5,tol:0,u:"º minuto",x:"1º e 5º minuto."},
+{s:"apgar",l:1,t:"txt",q:"Qual era a especialidade médica de Virginia Apgar?",ac:["anestesiologia","anestesia","anestesista"],x:"Anestesiologia. Ela começou na cirurgia."},
+{s:"apgar",l:1,t:"num",q:"A partir de quantos bpm a frequência cardíaca recebe nota 2?",n:100,tol:0,u:"bpm",x:"≥ 100 bpm = 2; < 100 = 1; ausente = 0."},
+{s:"apgar",l:1,t:"txt",q:"Como se chama a cor azulada só em mãos e pés do recém-nascido?",ac:["acrocianose"],x:"Acrocianose vale 1 ponto no item cor."},
+{s:"apgar",l:1,t:"txt",q:"Que teste neonatal pesquisa o reflexo vermelho?",ac:["teste do olhinho","olhinho"],x:"Teste do olhinho: catarata congênita, retinoblastoma, glaucoma."},
+{s:"apgar",l:1,t:"txt",q:"O teste do coraçãozinho é feito com qual exame?",ac:["oximetria de pulso","oximetria","oxímetro"],x:"Oximetria de pulso no membro superior direito e num inferior."},
+{s:"apgar",l:1,t:"txt",q:"O que significa o R de APGAR?",ac:["Respiration","respiração","esforço respiratório"],x:"Respiration: esforço respiratório."},
+{s:"apgar",l:1,t:"txt",q:"E o G de APGAR?",ac:["Grimace","careta","irritabilidade reflexa"],x:"Grimace: irritabilidade reflexa, a careta ao estímulo."},
+{s:"apgar",l:1,t:"txt",q:"O A inicial de APGAR (Appearance) avalia o quê?",ac:["cor","cor da pele","coloração"],x:"A cor da pele."},
+{s:"apgar",l:1,t:"num",q:"Peso abaixo do qual o RN é de baixo peso, em gramas:",n:2500,tol:0,u:"g",x:"< 2.500 g. Muito baixo < 1.500 g; extremo < 1.000 g."},
+{s:"apgar",l:2,t:"num",q:"Em que ano o escore foi publicado?",n:1953,tol:0,u:"",x:"Apresentado em 1952 e publicado em 1953."},
+{s:"apgar",l:2,t:"num",q:"Qual a SpO₂ mínima, em %, para o teste do coraçãozinho ser normal?",n:95,tol:0,u:"%",x:"≥ 95% nas duas medidas e diferença ≤ 3%."},
+{s:"apgar",l:2,t:"num",q:"Qual a diferença máxima, em pontos percentuais, entre MSD e MI para o coraçãozinho ser normal?",n:3,tol:0,u:"%",x:"Até 3%. Diferença ≥ 4% = duvidoso, repetir em 1 h."},
+{s:"apgar",l:2,t:"txt",q:"No coraçãozinho, mede-se em um membro inferior e em qual membro superior?",ac:["direito","membro superior direito","MSD","braço direito","mão direita"],x:"Membro superior direito (pré-ductal) e um inferior (pós-ductal)."},
+{s:"apgar",l:2,t:"txt",q:"Cite uma doença do teste do pezinho básico do SUS.",ac:["fenilcetonúria","hipotireoidismo congênito","hipotireoidismo","doença falciforme","anemia falciforme","hemoglobinopatias","fibrose cística","hiperplasia adrenal congênita","hiperplasia adrenal","deficiência de biotinidase"],x:"Fenilcetonúria, hipotireoidismo congênito, doença falciforme/hemoglobinopatias, fibrose cística, hiperplasia adrenal congênita e deficiência de biotinidase."},
+{s:"apgar",l:2,t:"num",q:"Número da lei de 2021 que amplia o teste do pezinho (só o número):",n:14154,tol:0,u:"",x:"Lei 14.154/2021, em 5 etapas."},
+{s:"apgar",l:2,t:"num",q:"Em quantas etapas a Lei 14.154/2021 amplia o teste do pezinho?",n:5,tol:0,u:"",x:"5 etapas, até 14 grupos de doenças."},
+{s:"apgar",l:2,t:"txt",q:"Qual sinal a própria Apgar considerava o mais importante?",ac:["frequência cardíaca","FC","pulso","batimentos"],x:"A frequência cardíaca."},
+{s:"apgar",l:2,t:"txt",q:"Qual fração é VP/(VP+FP)?",ac:["VPP","valor preditivo positivo"],x:"Valor preditivo positivo."},
+{s:"apgar",l:2,t:"txt",q:"Qual medida é VP/(VP+FN)?",ac:["sensibilidade"],x:"Sensibilidade: a fração dos doentes que o teste detecta."},
+{s:"apgar",l:2,t:"txt",q:"Qual medida é VN/(VN+FP)?",ac:["especificidade"],x:"Especificidade: a fração dos sadios que o teste dá negativo."},
+{s:"apgar",l:2,t:"num",q:"Se o Apgar do 5º minuto for < 7, ele é repetido a cada 5 minutos até quantos minutos?",n:20,tol:0,u:"min",x:"Até 20 minutos de vida."},
+{s:"apgar",l:2,t:"num",q:"Antes de quantas semanas de idade gestacional o RN é pré-termo?",n:37,tol:0,u:"semanas",x:"< 37 semanas. Pós-termo ≥ 42."},
+{s:"apgar",l:2,t:"txt",q:"Sigla do RN abaixo do percentil 10 de peso para a idade gestacional:",ac:["PIG","pequeno para a idade gestacional"],x:"PIG. Acima do p90: GIG; entre eles: AIG."},
+{s:"apgar",l:2,t:"num",q:"Até que perda percentual de peso nos primeiros dias é considerada fisiológica?",n:10,tol:0,u:"%",x:"Cerca de 10%, recuperada em 10 a 14 dias."},
+{s:"apgar",l:2,t:"num",q:"Faixa de Apgar \"moderadamente anormal\": de quanto a 6?",n:4,tol:0,u:"",x:"4–6 moderadamente anormal; 0–3 baixo; 7–10 normal."},
+{s:"apgar",l:2,t:"ord",q:"Ordene as letras do acrônimo APGAR:",o:["Appearance (cor)","Pulse (FC)","Grimace (reflexo)","Activity (tônus)","Respiration (respiração)"],x:"A-P-G-A-R."},
+{s:"apgar",l:2,t:"ord",q:"Ordene do mais leve para o mais pesado:",o:["Extremo baixo peso","Muito baixo peso","Baixo peso","Peso adequado"],x:"< 1.000 g, < 1.500 g, < 2.500 g, ≥ 2.500 g."},
+{s:"apgar",l:2,t:"ord",q:"Ordene os exames pelo momento ideal após o parto:",o:["Apgar de 1 minuto","Apgar de 5 minutos","Teste do coraçãozinho (24–48 h)","Teste do pezinho (3º–5º dia)"],x:"Sala de parto, depois antes da alta, depois do 3º ao 5º dia."},
+{s:"apgar",l:2,t:"ord",q:"Ordene os períodos da mortalidade infantil:",o:["Neonatal precoce (0–6 dias)","Neonatal tardio (7–27 dias)","Pós-neonatal (28–364 dias)"],x:"Precoce, tardio, pós-neonatal."},
+{s:"apgar",l:3,t:"txt",q:"Na reanimação neonatal, o RN segue com FC < 100 após os passos iniciais. Qual o próximo passo?",ac:["ventilação com pressão positiva","ventilação","VPP","ventilar"],x:"Ventilação com pressão positiva. O Apgar não decide o início da reanimação."},
+{s:"apgar",l:3,t:"num",q:"Abaixo de que FC, mesmo após ventilação adequada, inicia-se a massagem cardíaca?",n:60,tol:0,u:"bpm",x:"FC < 60 bpm: massagem com ventilação, na razão 3:1."},
+{s:"apgar",l:3,t:"num",q:"Massagem neonatal: quantas compressões para cada ventilação?",n:3,tol:0,u:"",x:"3 compressões : 1 ventilação."},
+{s:"apgar",l:3,t:"txt",q:"Qual doença neuromuscular entra na última etapa da ampliação do pezinho? (sigla)",ac:["AME","atrofia muscular espinhal"],x:"Atrofia muscular espinhal (AME)."},
+{s:"apgar",l:3,t:"txt",q:"Qual exame é usado no teste da orelhinha? (o mais comum)",ac:["emissões otoacústicas","EOA","otoemissões","emissoes otoacusticas","PEATE"],x:"Emissões otoacústicas evocadas (ou PEATE)."},
+{s:"apgar",l:3,t:"num",q:"Em que ano Virginia Apgar nasceu?",n:1909,tol:0,u:"",x:"7 de junho de 1909, em Westfield, Nova Jersey."},
+{s:"apgar",l:3,t:"num",q:"Quantas combinações de notas são possíveis no Apgar (5 sinais, 3 notas cada)?",n:243,tol:0,u:"",x:"3⁵ = 243."},
+{s:"apgar",l:3,t:"mc",q:"Por que Apgar recomendava que outra pessoa, e não quem fez o parto, desse a nota?",o:["Para ganhar tempo","Por objetividade","Porque o obstetra não sabe a escala","Por exigência legal"],a:1,x:"Quem fez o parto tende a superestimar a nota."},
+{s:"apgar",l:3,t:"mc",q:"Por que a cor é o sinal que mais raramente recebe 2?",o:["A acrocianose é comum nos primeiros minutos","A cor só é avaliada no 5º minuto","A cor depende da etnia","O oxímetro é obrigatório"],a:0,x:"A acrocianose é normal logo após o parto, então Apgar 10 no 1º minuto é raro."},
+{s:"apgar",l:3,c:1,t:"num",q:"Quantos recém-nascidos foram avaliados no artigo original de 1953?",n:1021,tol:0,u:"",x:"1.021 recém-nascidos."},
+{s:"apgar",l:3,c:1,t:"txt",q:"Em que organização Apgar trabalhou com prevenção de defeitos congênitos?",ac:["March of Dimes","National Foundation"],x:"March of Dimes, a partir de 1959."},
+{s:"apgar",l:3,c:1,t:"txt",q:"Quem sugeriu o acrônimo APGAR?",ac:["Joseph Butterfield","Butterfield"],x:"Joseph Butterfield, da Universidade do Colorado, no início dos anos 1960."},
+{s:"apgar",l:3,c:1,t:"txt",q:"Em que universidade Apgar se formou em medicina?",ac:["Columbia","Universidade Columbia","Columbia University"],x:"Columbia (1933). O mestrado em saúde pública foi na Johns Hopkins."},
+{s:"apgar",l:3,c:1,t:"txt",q:"Em que revista o escore foi publicado em 1953? (basta o nome principal)",ac:["Current Researches in Anesthesia and Analgesia","Current Researches","Anesthesia and Analgesia","Anesthesia & Analgesia"],x:"Current Researches in Anesthesia and Analgesia."},
 
-/* ---------- JOHANNA DÖBEREINER ---------- */
-{s:"johanna",l:1,q:"Onde Johanna Döbereiner nasceu?",o:["Alemanha","Áustria","Antiga Tchecoslováquia","Polônia"],a:2,x:"Em Aussig (hoje Ústí nad Labem), na antiga Tchecoslováquia, em 1924."},
-{s:"johanna",l:1,q:"Que gênero de bactéria fixa nitrogênio em simbiose com a soja?",o:["Azotobacter","Bradyrhizobium","Nitrosomonas","Escherichia"],a:1,x:"Bradyrhizobium japonicum e B. elkanii."},
-{s:"johanna",l:1,q:"Qual enzima realiza a fixação biológica de nitrogênio?",o:["Nitrato redutase","Nitrogenase","Urease","RuBisCO"],a:1,x:"Nitrogenase: complexo Fe-proteína + MoFe-proteína."},
-{s:"johanna",l:1,q:"Que porcentagem do ar é N₂?",o:["21%","50%","78%","96%"],a:2,x:"≈78%. Mas a tripla ligação torna o N₂ inacessível às plantas."},
-{s:"johanna",l:1,q:"Que cultura brasileira dispensa adubo nitrogenado graças ao trabalho dela?",o:["Milho","Soja","Café","Algodão"],a:1,x:"Soja. O país virou potência agrícola economizando bilhões em adubo."},
-{s:"johanna",l:1,q:"Em que instituição ela fez a maior parte de sua carreira?",o:["Embrapa (Agrobiologia, Seropédica)","Instituto Agronômico de Campinas","Esalq","Fiocruz"],a:0,x:"No km 47, em Seropédica (RJ), hoje Embrapa Agrobiologia; também na UFRRJ."},
-{s:"johanna",l:1,q:"Na coloração de Gram, as bactérias Gram-negativas ficam…",o:["Roxas","Rosas/vermelhas","Verdes","Incolores"],a:1,x:"Rosas, pela safranina. Gram-positivas ficam roxas."},
-{s:"johanna",l:1,q:"Em que ano ela foi indicada ao Prêmio Nobel?",o:["1964","1985","1997","2000"],a:2,x:"1997."},
-{s:"johanna",l:1,q:"Qual o número atômico do nitrogênio?",n:7,t:0,u:"",x:"N: Z = 7, massa ≈ 14."},
-{s:"johanna",l:2,q:"Ao cortar um nódulo de soja, o interior está rosado. O que isso indica?",o:["Nódulo inativo, infectado","Nódulo ativo, com leg-hemoglobina","Excesso de nitrogênio no solo","Contaminação por fungo"],a:1,x:"A leg-hemoglobina controla o O₂ e protege a nitrogenase. Branco, verde ou marrom = inativo."},
-{s:"johanna",l:2,q:"A nitrogenase é inativada por…",o:["Gás carbônico","Oxigênio","Luz","Água"],a:1,x:"O₂. Por isso o nódulo tem leg-hemoglobina e o Azospirillum cresce logo abaixo da superfície do meio semissólido."},
-{s:"johanna",l:2,q:"Quem converte NH₄⁺ em NO₂⁻ na nitrificação?",o:["Nitrobacter","Nitrosomonas","Pseudomonas","Rhizobium"],a:1,x:"Nitrosomonas (NH₄⁺ → NO₂⁻); depois Nitrobacter (NO₂⁻ → NO₃⁻)."},
-{s:"johanna",l:2,q:"O que é a desnitrificação?",o:["NO₃⁻ → N₂, em ambiente anaeróbio","N₂ → NH₃","NH₄⁺ → NO₃⁻","Matéria orgânica → NH₄⁺"],a:0,x:"Devolve o nitrogênio ao ar. Ex.: Pseudomonas."},
-{s:"johanna",l:2,q:"Qual o principal mecanismo do Azospirillum para promover o crescimento das plantas?",o:["Fixar mais N que o Bradyrhizobium","Produzir fito-hormônios (auxinas)","Solubilizar ferro","Matar patógenos"],a:1,x:"Fito-hormônios que aumentam as raízes. Fixa N, mas menos que o Bradyrhizobium."},
-{s:"johanna",l:2,q:"A coinoculação (Bradyrhizobium + Azospirillum), lançada pela Embrapa em 2014, aumentou em média o rendimento da soja em…",o:["5%","16%","40%","100%"],a:1,x:"≈16% em relação ao Bradyrhizobium sozinho."},
-{s:"johanna",l:2,q:"Ordem correta da coloração de Gram:",o:["Safranina → lugol → álcool → cristal violeta","Cristal violeta → lugol → álcool → safranina","Lugol → cristal violeta → safranina → álcool","Cristal violeta → álcool → lugol → safranina"],a:1,x:"Cristal violeta, lugol (fixa), álcool/acetona (descora), safranina (contracor)."},
-{s:"johanna",l:2,q:"Que planta despertou o interesse dela pela fixação de N em gramíneas?",o:["Cana-de-açúcar","Grama-batatais","Milho","Braquiária"],a:1,x:"A grama-batatais ficava verde sem adubo nitrogenado."},
-{s:"johanna",l:2,q:"Segundo a página da JIEPE, em que ano ela se naturalizou brasileira?",o:["1950","1953","1956","1964"],a:2,x:"Chegou em 1950 e se naturalizou em 1956."},
-{s:"johanna",l:2,q:"Microscópio com ocular de 10× e objetiva de 40×. Aumento total?",n:400,t:0,u:"×",x:"10 × 40 = 400×."},
-{s:"johanna",l:2,q:"A ureia tem 46% de N. Quantos kg de ureia fornecem 100 kg de N?",n:217,t:2,u:"kg",x:"100 ÷ 0,46 ≈ 217 kg."},
-{s:"johanna",l:2,q:"O nome Herbaspirillum seropedicae homenageia…",o:["Uma pesquisadora","A cidade de Seropédica","Um rio do Rio de Janeiro","O seringal"],a:1,x:"Seropédica (RJ), onde fica a Embrapa Agrobiologia."},
-{s:"johanna",l:2,q:"Gluconacetobacter diazotrophicus é endofítica e associada principalmente a…",o:["Soja","Feijão","Cana-de-açúcar","Arroz irrigado"],a:2,x:"Cana-de-açúcar, vivendo dentro dos tecidos da planta."},
-{s:"johanna",l:2,q:"O processo Haber-Bosch produz amônia a partir de N₂ e H₂ usando…",o:["Temperatura ambiente e enzimas","Alta temperatura, alta pressão e catalisador de ferro","Luz solar","Bactérias"],a:1,x:"≈400–500 °C, 150–300 atm, catalisador de ferro. Grande gasto de energia."},
-{s:"johanna",l:3,q:"Diluição 10⁻⁵, 0,1 mL plaqueado, 87 colônias. UFC/mL no original, em unidades de 10⁷?",n:8.7,t:0.05,u:"× 10⁷ UFC/mL",x:"87 ÷ (0,1 × 10⁻⁵) = 8,7 × 10⁷ UFC/mL."},
-{s:"johanna",l:3,q:"A nitrogenase gasta 16 ATP por N₂ fixado. Quantos ATP por molécula de NH₃?",n:8,t:0,u:"ATP",x:"Cada N₂ dá 2 NH₃ → 16 ÷ 2 = 8."},
-{s:"johanna",l:3,q:"Soja com 4 t/ha de grãos precisa de ≈80 kg de N por tonelada. Quantos kg de ureia (46% N) seriam necessários sem FBN?",n:696,t:4,u:"kg/ha",x:"4 × 80 = 320 kg de N; 320 ÷ 0,46 ≈ 696 kg de ureia."},
-{s:"johanna",l:3,q:"1,2 × 10⁶ células por semente, 300.000 sementes/ha, inoculante com 5 × 10⁹ células/mL. Quantos mL por hectare?",n:72,t:0.5,u:"mL",x:"1,2 × 10⁶ × 3 × 10⁵ = 3,6 × 10¹¹ células; ÷ 5 × 10⁹ = 72 mL."},
-{s:"johanna",l:3,q:"Quantos mL de estoque 1 mol/L para preparar 50 mL a 0,1 mol/L?",n:5,t:0,u:"mL",x:"C₁V₁ = C₂V₂ → V₁ = 0,1 × 50 ÷ 1 = 5 mL (+ 45 mL de água)."},
-{s:"johanna",l:3,q:"Cultura vai de 10² a 10⁸ células em 10 h de fase log. Tempo de geração, em minutos?",n:30,t:1,u:"min",x:"n = log₂(10⁶) ≈ 19,9 gerações; 600 ÷ 19,9 ≈ 30 min."},
-{s:"johanna",l:3,q:"Três diluições seriadas de 1 mL em 9 mL. Fator total de diluição?",n:1000,t:0,u:"vezes",x:"Cada passo 1:10 → 10³ = 1.000 (diluição 10⁻³)."},
-{s:"johanna",l:3,q:"Em meio NFb semissólido sem nitrogênio, como se reconhece o Azospirillum?",o:["Colônias vermelhas na placa","Película logo abaixo da superfície do meio","Turvação no fundo do tubo","Bolhas de gás"],a:1,x:"Forma uma película onde a concentração de O₂ é baixa o bastante para a nitrogenase funcionar."},
-{s:"johanna",l:3,q:"Em YMA com azul de bromotimol, o Bradyrhizobium (crescimento lento) deixa o meio…",o:["Amarelo, por acidificar","Azul, por alcalinizar","Vermelho","Incolor"],a:1,x:"Bradyrhizobium alcaliniza (azul); rizóbios de crescimento rápido acidificam (amarelo)."},
-{s:"johanna",l:3,q:"Porcentagem de N no sulfato de amônio, (NH₄)₂SO₄ (N = 14, H = 1, S = 32, O = 16)?",n:21.2,t:0.3,u:"%",x:"Massa molar 132 g/mol; N = 28 g → 28 ÷ 132 ≈ 21,2%."},
-{s:"johanna",l:3,q:"Equação da nitrogenase: N₂ + 8H⁺ + 8e⁻ + 16ATP → 2NH₃ + ? + 16ADP + 16Pi. Qual o produto que falta?",o:["O₂","H₂","N₂O","H₂O"],a:1,x:"H₂: parte da energia é gasta formando hidrogênio."},
-{s:"johanna",l:3,q:"Inoculantes caseiros feitos na fazenda são desaconselhados porque…",o:["São mais caros","Podem conter patógenos e não ter as bactérias certas","São proibidos na soja","Matam o Bradyrhizobium do solo"],a:1,x:"A Embrapa encontrou neles bactérias como Klebsiella e Staphylococcus, e não as fixadoras desejadas."},
-
-/* ---------- ENIGMAS ---------- */
-{s:"enigma",l:1,q:"Cifra de César (+3): EHUWKD",o:["BERTHA","SONJA","APGAR","JOHANNA"],a:0,x:"Volte 3 letras em cada: E→B, H→E, U→R, W→T, K→H, D→A."},
-{s:"enigma",l:1,q:"Cifra de César (+3): VRQMD",o:["DIRAC","SONJA","SORBO","VARGAS"],a:1,x:"V→S, R→O, Q→N, M→J, D→A."},
-{s:"enigma",l:1,q:"Alfabeto numerado (A = 1): 1 · 16 · 7 · 1 · 18",o:["APGAR","AGORA","PAGAR","LUTZ"],a:0,x:"A(1) P(16) G(7) A(1) R(18)."},
-{s:"enigma",l:1,q:"Número romano: MCMXXXII",n:1932,t:0,u:"",x:"M 1000 + CM 900 + XXX 30 + II 2 = 1932: o ano do voto feminino."},
-{s:"enigma",l:1,q:"Número romano: MCMXLV",n:1945,t:0,u:"",x:"1000 + 900 + 40 + 5 = 1945: a Carta da ONU."},
-{s:"enigma",l:1,q:"Complete a sequência de crescimento bacteriano: 2, 4, 8, 16, __, 64",n:32,t:0,u:"",x:"Cada geração dobra."},
-{s:"enigma",l:2,q:"Morse: ··· / ——— / ·——— / ·—",o:["SOJA","SODA","OSSO","SOMA"],a:0,x:"S (···), O (———), J (·———), A (·—)."},
-{s:"enigma",l:2,q:"Morse: —·· / —· / ·—",o:["DNA","RNA","TNA","DNO"],a:0,x:"D (—··), N (—·), A (·—)."},
-{s:"enigma",l:2,q:"Alfabeto numerado (A = 1): 4 · 9 · 18 · 1 · 3",o:["DIRAC","DICRA","BOHR","DIRCE"],a:0,x:"D I R A C: o orientador de Sonja."},
-{s:"enigma",l:2,q:"Lida de trás para a frente: ZTUL. De quem é a estação?",o:["Bertha Lutz","Sonja Ashauer","Virginia Apgar","Johanna Döbereiner"],a:0,x:"ZTUL invertido = LUTZ."},
-{s:"enigma",l:2,q:"Qual das pioneiras nasceu em 1909?",o:["Bertha Lutz","Sonja Ashauer","Virginia Apgar","Johanna Döbereiner"],a:2,x:"Bertha 1894, Apgar 1909, Sonja 1923, Johanna 1924."},
-{s:"enigma",l:2,q:"Cadeado: (ano do voto feminino no Brasil) + (nota máxima do Apgar)",n:1942,t:0,u:"",x:"1932 + 10 = 1942, que é também o ano de formatura de Sonja na USP."},
-{s:"enigma",l:3,q:"Cifra de César (+1): OJUSPHFOJP",o:["NITROGÊNIO","NITRIFICA","OXIGÊNIO","NUTRIENTE"],a:0,x:"Volte 1 letra: O→N, J→I, U→T, S→R, P→O, H→G, F→E, O→N, J→I, P→O."},
-{s:"enigma",l:3,q:"ROT13 (César +13): NCTNE",o:["APGAR","AGORA","PAGAR","APNEIA"],a:0,x:"N→A, C→P, T→G, N→A, E→R."},
-{s:"enigma",l:3,q:"Cadeado: (número atômico do N) × (nota máxima do Apgar) + (ODS da igualdade de gênero)",n:75,t:0,u:"",x:"7 × 10 + 5 = 75."},
-{s:"enigma",l:3,q:"Cifra de César (+3): MRKDQQD",o:["JOHANNA","JUANITA","SONJA","HANNAH"],a:0,x:"M→J, R→O, K→H, D→A, Q→N, Q→N, D→A."},
-{s:"enigma",l:3,q:"Cadeado de 4 dígitos: (ano de nascimento de Sonja) − (idade com que morreu)",n:1898,t:0,u:"",x:"1923 − 25 = 1898."}
+/* ---------------- JOHANNA DÖBEREINER ---------------- */
+{s:"johanna",l:1,t:"txt",q:"Qual enzima realiza a fixação biológica de nitrogênio?",ac:["nitrogenase"],x:"Nitrogenase: Fe-proteína + MoFe-proteína."},
+{s:"johanna",l:1,t:"txt",q:"Qual gênero de bactéria fixa nitrogênio em simbiose com a soja?",ac:["Bradyrhizobium","Bradyrhizobium japonicum","rizóbio","rizobio"],x:"Bradyrhizobium japonicum e B. elkanii."},
+{s:"johanna",l:1,t:"txt",q:"Qual gênero de bactéria associativa ela redescobriu em gramíneas?",ac:["Azospirillum","Azospirilum"],x:"Azospirillum, antes chamado Spirillum lipoferum."},
+{s:"johanna",l:1,t:"num",q:"Que porcentagem do ar é N₂?",n:78,tol:1,u:"%",x:"≈ 78%."},
+{s:"johanna",l:1,t:"txt",q:"Em que país (antigo) ela nasceu?",ac:["Tchecoslováquia","Checoslováquia","Tchecoslovaquia"],x:"Antiga Tchecoslováquia, em 1924."},
+{s:"johanna",l:1,t:"txt",q:"Que cultura brasileira dispensa adubo nitrogenado graças ao trabalho dela?",ac:["soja"],x:"Soja."},
+{s:"johanna",l:1,t:"txt",q:"Em que empresa pública de pesquisa ela trabalhou?",ac:["Embrapa","Embrapa Agrobiologia"],x:"Embrapa Agrobiologia, em Seropédica (RJ)."},
+{s:"johanna",l:1,t:"num",q:"Em que ano ela foi indicada ao Nobel?",n:1997,tol:0,u:"",x:"1997."},
+{s:"johanna",l:1,t:"num",q:"Número atômico do nitrogênio:",n:7,tol:0,u:"",x:"Z = 7, massa ≈ 14."},
+{s:"johanna",l:1,t:"txt",q:"Que gás inativa a nitrogenase?",ac:["oxigênio","O2","O₂","oxigenio"],x:"O₂. Por isso o nódulo tem leg-hemoglobina."},
+{s:"johanna",l:1,t:"txt",q:"De que cor ficam as bactérias Gram-negativas?",ac:["rosa","vermelha","vermelho","rosada","rosas"],x:"Rosa/vermelha, pela safranina. Gram-positivas: roxas."},
+{s:"johanna",l:1,t:"txt",q:"Como se chama o produto com bactérias aplicado nas sementes antes do plantio?",ac:["inoculante","inoculantes"],x:"Inoculante."},
+{s:"johanna",l:2,t:"txt",q:"Que proteína dá a cor rosada ao nódulo ativo?",ac:["leg-hemoglobina","leghemoglobina","leg hemoglobina"],x:"Leg-hemoglobina, que controla o O₂ e protege a nitrogenase."},
+{s:"johanna",l:2,t:"txt",q:"Qual bactéria converte NH₄⁺ em NO₂⁻?",ac:["Nitrosomonas"],x:"Nitrosomonas. Depois Nitrobacter faz NO₂⁻ → NO₃⁻."},
+{s:"johanna",l:2,t:"txt",q:"Qual bactéria converte NO₂⁻ em NO₃⁻?",ac:["Nitrobacter"],x:"Nitrobacter."},
+{s:"johanna",l:2,t:"txt",q:"Como se chama a etapa NO₃⁻ → N₂, em ambiente sem oxigênio?",ac:["desnitrificação","desnitrificacao"],x:"Desnitrificação: devolve o N ao ar."},
+{s:"johanna",l:2,t:"txt",q:"Como se chama a etapa NH₄⁺ → NO₃⁻?",ac:["nitrificação","nitrificacao"],x:"Nitrificação (aeróbia)."},
+{s:"johanna",l:2,t:"txt",q:"Que planta, sempre verde sem adubo, despertou o interesse dela?",ac:["grama-batatais","grama batatais","batatais"],x:"A grama-batatais, no km 47 em Seropédica."},
+{s:"johanna",l:2,t:"txt",q:"Como se chama o processo industrial que produz amônia a partir de N₂ e H₂?",ac:["Haber-Bosch","Haber Bosch","processo Haber-Bosch"],x:"Haber-Bosch: alta temperatura, alta pressão e catalisador de ferro."},
+{s:"johanna",l:2,t:"txt",q:"Na coloração de Gram, qual o corante de contraste (último)?",ac:["safranina","fucsina"],x:"Safranina."},
+{s:"johanna",l:2,t:"txt",q:"Na coloração de Gram, qual reagente fixa o cristal violeta?",ac:["lugol","iodo"],x:"Lugol (iodo)."},
+{s:"johanna",l:2,t:"txt",q:"Rizóbios são Gram-positivos ou Gram-negativos?",ac:["negativos","Gram-negativos","negativo","gram negativos"],x:"Gram-negativos, assim como Azospirillum e Herbaspirillum."},
+{s:"johanna",l:2,t:"txt",q:"Como se chama usar Bradyrhizobium e Azospirillum juntos na semente?",ac:["coinoculação","co-inoculação","coinoculacao"],x:"Coinoculação, lançada pela Embrapa em 2014."},
+{s:"johanna",l:2,t:"num",q:"Em média, quantos por cento a coinoculação aumentou o rendimento da soja?",n:16,tol:0,u:"%",x:"≈ 16% a mais que o Bradyrhizobium sozinho."},
+{s:"johanna",l:2,t:"txt",q:"O Azospirillum promove o crescimento principalmente produzindo o quê?",ac:["fito-hormônios","fitohormônios","hormônios vegetais","auxinas","auxina","fitormônios"],x:"Fito-hormônios como as auxinas: as raízes podem dobrar."},
+{s:"johanna",l:2,t:"txt",q:"Como se chamam as bactérias que vivem dentro dos tecidos da planta?",ac:["endofíticas","endófitas","endofiticas","endofíticos"],x:"Endofíticas, como Gluconacetobacter e Herbaspirillum."},
+{s:"johanna",l:2,t:"txt",q:"Gluconacetobacter diazotrophicus vive associada a qual cultura?",ac:["cana-de-açúcar","cana","cana de açúcar"],x:"Cana-de-açúcar."},
+{s:"johanna",l:2,t:"num",q:"Qual a porcentagem de N na ureia?",n:46,tol:0,u:"%",x:"Ureia 46%, nitrato de amônio 34%, sulfato de amônio 21%."},
+{s:"johanna",l:2,t:"num",q:"Em que ano ela se naturalizou brasileira (segundo a página da JIEPE)?",n:1956,tol:0,u:"",x:"Chegou em 1950 e se naturalizou em 1956."},
+{s:"johanna",l:2,t:"ord",q:"Ordene as etapas da coloração de Gram:",o:["Cristal violeta","Lugol","Álcool ou acetona","Safranina"],x:"Corante, fixador, descorante, contracorante."},
+{s:"johanna",l:2,t:"ord",q:"Ordene a nitrificação e a desnitrificação, partindo do amônio:",o:["NH₄⁺","NO₂⁻","NO₃⁻","N₂"],x:"Nitrosomonas, Nitrobacter, depois desnitrificação."},
+{s:"johanna",l:2,t:"ord",q:"Ordene as fases do crescimento bacteriano:",o:["Lag","Log (exponencial)","Estacionária","Morte"],x:"Adaptação, crescimento exponencial, estabilidade, declínio."},
+{s:"johanna",l:2,t:"ord",q:"Ordene a vida de Johanna:",o:["Nascimento na Tchecoslováquia","Chegada ao Brasil","Naturalização","Programa da soja baseado em FBN","Indicação ao Nobel"],x:"1924 → 1950 → 1956 → 1964 → 1997."},
+{s:"johanna",l:3,t:"ord",q:"Ordene a formação do nódulo:",o:["Raiz libera flavonoides","Bactéria responde com fatores Nod","Pelo radicular se curva","Cordão de infecção","Bacteroides dentro do nódulo"],x:"Sinalização, curvatura, infecção e diferenciação em bacteroides."},
+{s:"johanna",l:3,t:"txt",q:"Que moléculas a raiz da leguminosa libera para atrair o rizóbio?",ac:["flavonoides","flavonóides"],x:"Flavonoides; o rizóbio responde com fatores Nod."},
+{s:"johanna",l:3,t:"txt",q:"Com que sinais o rizóbio responde aos flavonoides da raiz?",ac:["fatores Nod","fator Nod","Nod","fatores de nodulação"],x:"Fatores Nod."},
+{s:"johanna",l:3,t:"txt",q:"Como se chama o rizóbio já diferenciado dentro do nódulo?",ac:["bacteroide","bacteroides","bacteróide"],x:"Bacteroide."},
+{s:"johanna",l:3,t:"txt",q:"Qual meio semissólido sem nitrogênio revela o Azospirillum por uma película? (sigla)",ac:["NFb"],x:"NFb semissólido: película logo abaixo da superfície."},
+{s:"johanna",l:3,t:"txt",q:"Qual meio de cultura (sigla) é usado para rizóbios?",ac:["YMA","yeast mannitol agar","levedura manitol"],x:"YMA, yeast mannitol agar."},
+{s:"johanna",l:3,t:"num",q:"Quantos ATP a nitrogenase gasta por N₂ fixado?",n:16,tol:0,u:"ATP",x:"16 ATP por N₂, ou 8 por NH₃."},
+{s:"johanna",l:3,t:"txt",q:"Além de 2 NH₃, que gás a nitrogenase libera?",ac:["H2","H₂","hidrogênio","gás hidrogênio","hidrogenio"],x:"H₂: N₂ + 8H⁺ + 8e⁻ + 16ATP → 2NH₃ + H₂."},
+{s:"johanna",l:3,t:"num",q:"Recomendação mínima de células de Bradyrhizobium por semente de soja, em milhões:",n:1.2,tol:0.05,u:"milhões",x:"1,2 × 10⁶ células por semente."},
+{s:"johanna",l:3,t:"num",q:"Contagem em placa: número mínimo de colônias para a placa ser considerada válida:",n:30,tol:0,u:"",x:"Entre 30 e 300 colônias."},
+{s:"johanna",l:3,t:"txt",q:"Herbaspirillum seropedicae homenageia qual lugar?",ac:["Seropédica","Seropedica"],x:"Seropédica (RJ), sede da Embrapa Agrobiologia."},
+{s:"johanna",l:3,t:"mc",q:"Em YMA com azul de bromotimol, o Bradyrhizobium deixa o meio…",o:["Amarelo, por acidificar","Azul, por alcalinizar","Vermelho","Incolor"],a:1,x:"Crescimento lento alcaliniza (azul); rápido acidifica (amarelo)."},
+{s:"johanna",l:3,c:1,t:"txt",q:"Qual o nome atual da cidade natal de Johanna?",ac:["Ústí nad Labem","Usti nad Labem","Ústí"],x:"Aussig, hoje Ústí nad Labem, na República Tcheca."},
+{s:"johanna",l:3,c:1,t:"txt",q:"Em que universidade ela se formou em agronomia?",ac:["Munique","Universidade de Munique","Munich"],x:"Universidade de Munique."},
+{s:"johanna",l:3,c:1,t:"txt",q:"Qual pesquisadora da Embrapa Soja é referência em inoculantes e alertou contra os caseiros?",ac:["Mariangela Hungria","Hungria"],x:"Mariangela Hungria, Embrapa Soja (Londrina)."},
+{s:"johanna",l:3,c:1,t:"num",q:"Em que ano a Embrapa lançou a coinoculação na soja?",n:2014,tol:0,u:"",x:"2014."},
+{s:"johanna",l:3,c:1,t:"txt",q:"Em que cidade fica a Embrapa Soja?",ac:["Londrina"],x:"Londrina (PR). A Agrobiologia fica em Seropédica (RJ)."}
 ];
-/* Questões de consulta: aparecem só nas estações com celular liberado no simulado */
-Q.push(
-{s:"bertha",l:3,c:1,q:"Qual o nome do pai de Bertha Lutz, cientista pioneiro da medicina tropical?",o:["Oswaldo Cruz","Adolpho Lutz","Carlos Chagas","Emílio Ribas"],a:1,x:"Adolpho Lutz, pioneiro da medicina tropical e da zoologia médica no Brasil."},
-{s:"bertha",l:3,c:1,q:"Qual o número do decreto do Código Eleitoral de 1932?",o:["Decreto nº 19.398","Decreto nº 21.076","Decreto nº 4.737","Decreto nº 22.940"],a:1,x:"Decreto nº 21.076, de 24 de fevereiro de 1932."},
-{s:"bertha",l:3,c:1,q:"Em que data a Carta da ONU entrou em vigor?",o:["26 de junho de 1945","24 de outubro de 1945","10 de dezembro de 1948","1º de janeiro de 1946"],a:1,x:"24 de outubro de 1945, o Dia das Nações Unidas. Foi assinada em 26 de junho."},
-{s:"bertha",l:3,c:1,q:"Que delegada da República Dominicana atuou ao lado de Bertha em São Francisco?",o:["Minerva Bernardino","Gabriela Mistral","Eleanor Roosevelt","Amalia Ledón"],a:0,x:"Minerva Bernardino, uma das quatro mulheres signatárias da Carta."},
-{s:"bertha",l:3,c:1,q:"Em que cidade a Carta das Nações Unidas foi assinada?",o:["Nova York","Genebra","São Francisco","Londres"],a:2,x:"Na Conferência de São Francisco, em 1945."},
-{s:"sonja",l:3,c:1,q:"Em que ano Paul Dirac recebeu o Nobel de Física?",n:1933,t:0,u:"",x:"1933, dividido com Erwin Schrödinger."},
-{s:"sonja",l:3,c:1,q:"Com quem Dirac dividiu o Nobel de Física?",o:["Werner Heisenberg","Erwin Schrödinger","Max Born","Wolfgang Pauli"],a:1,x:"Erwin Schrödinger (1933). Heisenberg recebeu o de 1932."},
-{s:"sonja",l:3,c:1,q:"Qual o valor exato da velocidade da luz no vácuo, em m/s?",n:299792458,t:0,u:"m/s",x:"299.792.458 m/s, valor exato por definição do metro."},
-{s:"sonja",l:3,c:1,q:"Qual o índice de refração do diamante?",n:2.42,t:0.02,u:"",x:"≈ 2,42, o que dá um ângulo limite pequeno (≈ 24°) e muito brilho."},
-{s:"sonja",l:3,c:1,q:"Em que ano Carl Anderson detectou o pósitron?",n:1932,t:0,u:"",x:"1932, em raios cósmicos. Nobel de 1936."},
-{s:"apgar",l:3,c:1,q:"Em que revista Apgar publicou o escore em 1953?",o:["The Lancet","JAMA","Current Researches in Anesthesia and Analgesia","Pediatrics"],a:2,x:"Current Researches in Anesthesia and Analgesia, vol. 32, p. 260–267."},
-{s:"apgar",l:3,c:1,q:"Quantos recém-nascidos foram avaliados no artigo original de 1953?",n:1021,t:0,u:"RN",x:"1.021 recém-nascidos."},
-{s:"apgar",l:3,c:1,q:"Em que organização Apgar trabalhou com prevenção de defeitos congênitos?",o:["Cruz Vermelha","March of Dimes","OMS","UNICEF"],a:1,x:"March of Dimes, a partir de 1959."},
-{s:"apgar",l:3,c:1,q:"Quem sugeriu o acrônimo APGAR (Appearance, Pulse, Grimace, Activity, Respiration)?",o:["A própria Virginia Apgar","Joseph Butterfield","L. Stanley James","Duncan Holaday"],a:1,x:"Joseph Butterfield, da Universidade do Colorado, no início dos anos 1960."},
-{s:"apgar",l:3,c:1,q:"Em que universidade Virginia Apgar se formou em medicina?",o:["Harvard","Johns Hopkins","Columbia","Yale"],a:2,x:"Columbia (1933). O mestrado em saúde pública foi na Johns Hopkins."},
-{s:"johanna",l:3,c:1,q:"Qual o nome atual da cidade natal de Johanna Döbereiner?",o:["Praga","Ústí nad Labem","Brno","Dresden"],a:1,x:"Aussig, hoje Ústí nad Labem, na República Tcheca."},
-{s:"johanna",l:3,c:1,q:"Em que universidade ela se formou em agronomia?",o:["Universidade de Munique","Universidade de Viena","Universidade de Praga","UFRRJ"],a:0,x:"Universidade de Munique, Alemanha."},
-{s:"johanna",l:3,c:1,q:"Em que cidade fica a Embrapa Agrobiologia?",o:["Londrina","Seropédica","Campinas","Brasília"],a:1,x:"Seropédica (RJ). Londrina abriga a Embrapa Soja."},
-{s:"johanna",l:3,c:1,q:"Em que ano a Embrapa lançou a tecnologia de coinoculação na soja?",n:2014,t:0,u:"",x:"2014: Bradyrhizobium + Azospirillum, com ≈16% a mais de rendimento."},
-{s:"johanna",l:3,c:1,q:"Qual pesquisadora da Embrapa Soja é referência em inoculantes e alertou contra os caseiros?",o:["Mariangela Hungria","Johanna Döbereiner","Verônica Reis","Fátima Moreira"],a:0,x:"Mariangela Hungria, da Embrapa Soja (Londrina)."}
-);
+
+/* ================= Geradores: questões com números sorteados ================= */
+const R = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const RC = arr => arr[Math.floor(Math.random()*arr.length)];
+const br = (n,d=2) => Number(n.toFixed(d)).toLocaleString("pt-BR");
+const deg = r => r*180/Math.PI, rad = d => d*Math.PI/180;
+const APGAR_DESC = {
+  cor:["cianose generalizada","corpo rosado com mãos e pés azulados","todo rosado"],
+  fc:[()=>"sem batimentos",()=>`FC de ${R(60,95)} bpm`,()=>`FC de ${R(110,160)} bpm`],
+  ref:["nenhuma resposta à aspiração","careta à aspiração","espirra e chora forte ao estímulo"],
+  ton:["flácido","alguma flexão dos membros","movimentação ativa"],
+  resp:["apneia","respiração fraca e irregular","choro forte"]
+};
+const GEN = [
+/* Bertha */
+{s:"bertha",l:2,g:9,f(){ const v=R(9,29), tv=R(60,300)*1000+R(0,999); const raw=tv/v, fr=raw-Math.floor(raw); const qe=fr>0.5?Math.ceil(raw):Math.floor(raw);
+  return {t:"num",q:`Uma cidade elege ${v} vereadores e teve ${tv.toLocaleString("pt-BR")} votos válidos. Qual o quociente eleitoral?`,n:qe,tol:0,u:"votos",x:`${tv.toLocaleString("pt-BR")} ÷ ${v} = ${br(raw,2)}. Fração ${fr>0.5?"maior que 0,5 arredonda para cima":"até 0,5 é desprezada"}: ${qe.toLocaleString("pt-BR")}.`}; }},
+{s:"bertha",l:2,g:9,f(){ const qe=R(8,15)*1000+R(0,9)*100, pv=R(2,6)*qe+R(1,qe-1); const qp=Math.floor(pv/qe);
+  return {t:"num",q:`Com QE = ${qe.toLocaleString("pt-BR")}, um partido teve ${pv.toLocaleString("pt-BR")} votos. Quantas vagas ganha direto pelo quociente partidário?`,n:qp,tol:0,u:"vagas",x:`${pv.toLocaleString("pt-BR")} ÷ ${qe.toLocaleString("pt-BR")} = ${br(pv/qe,2)}; despreza a fração: ${qp}.`}; }},
+{s:"bertha",l:1,g:10,f(){ const n=R(11,58); const m=Math.ceil(0.3*n-1e-9);
+  return {t:"num",q:`Um partido lança ${n} candidaturas a vereador. Qual o mínimo de candidaturas de cada sexo?`,n:m,tol:0,u:"",x:`30% de ${n} = ${br(0.3*n,1)}. O mínimo arredonda para cima: ${m}.`}; }},
+{s:"bertha",l:3,g:10,f(){ const seats=R(4,7); let A=R(8,20)*1000,B=R(4,12)*1000,C=R(2,8)*1000; const qs=[];
+  [["A",A],["B",B],["C",C]].forEach(([k,v])=>{ for(let d=1;d<=seats;d++) qs.push([v/d,k]); });
+  qs.sort((x,y)=>y[0]-x[0]); if(qs[seats-1][0]===qs[seats][0]) A+=100;
+  const qs2=[]; [["A",A],["B",B],["C",C]].forEach(([k,v])=>{ for(let d=1;d<=seats;d++) qs2.push([v/d,k]); }); qs2.sort((x,y)=>y[0]-x[0]);
+  const win=qs2.slice(0,seats); const cnt=win.filter(w=>w[1]==="A").length;
+  return {t:"num",q:`Método D'Hondt, ${seats} cadeiras. Votos: A = ${A.toLocaleString("pt-BR")}; B = ${B.toLocaleString("pt-BR")}; C = ${C.toLocaleString("pt-BR")}. Quantas cadeiras fica o partido A?`,n:cnt,tol:0,u:"cadeiras",
+    x:`Divida cada votação por 1, 2, 3… e pegue os ${seats} maiores quocientes: ${win.map(w=>w[1]+" "+Math.round(w[0]).toLocaleString("pt-BR")).join(", ")}.`}; }},
+{s:"bertha",l:3,g:9,f(){ const ps=["A","B","C","D"].map(k=>{ const vagas=R(0,4); return {k,vagas,votos:vagas*10000+R(1000,9900)}; });
+  ps.forEach(p=>p.m=p.votos/(p.vagas+1)); const best=ps.slice().sort((a,b)=>b.m-a.m)[0];
+  return {t:"txt",q:`Sobras (QE = 10.000). Partidos: ${ps.map(p=>`${p.k}: ${p.votos.toLocaleString("pt-BR")} votos e ${p.vagas} vaga${p.vagas===1?"":"s"}`).join("; ")}. Qual partido leva a primeira vaga de sobra? (escreva a letra)`,ac:[best.k],
+    x:`Média = votos ÷ (vagas + 1): ${ps.map(p=>p.k+" "+Math.round(p.m).toLocaleString("pt-BR")).join(", ")}. Maior: ${best.k}.`}; }},
+{s:"bertha",l:1,g:10,f(){ const tot=RC([513,81,77,41,55,23]), m=R(Math.round(tot*.08),Math.round(tot*.3)); const pc=m/tot*100;
+  return {t:"num",q:`Uma casa legislativa tem ${tot} cadeiras e ${m} são ocupadas por mulheres. Qual a porcentagem? (1 casa decimal)`,n:Number(pc.toFixed(1)),tol:0.15,u:"%",x:`${m} ÷ ${tot} × 100 = ${br(pc,1)}%.`}; }},
+/* Sonja */
+{s:"sonja",l:2,g:12,f(){ const n2=RC([1.33,1.5,1.49]), t1=R(20,70); const t2=deg(Math.asin(Math.sin(rad(t1))/n2));
+  return {t:"num",q:`Luz passa do ar (n = 1,00) para um meio de n = ${br(n2)} com ângulo de incidência de ${t1}°. Qual o ângulo de refração, em graus?`,n:Number(t2.toFixed(1)),tol:0.6,u:"°",x:`sen θ₂ = sen ${t1}° ÷ ${br(n2)} → θ₂ ≈ ${br(t2,1)}°.`}; }},
+{s:"sonja",l:2,g:12,f(){ const [nome,n]=RC([["água",1.33],["vidro",1.5],["acrílico",1.49],["diamante",2.42]]); const tc=deg(Math.asin(1/n));
+  return {t:"num",q:`Ângulo limite para luz saindo do(a) ${nome} (n = ${br(n)}) para o ar, em graus:`,n:Number(tc.toFixed(1)),tol:0.6,u:"°",x:`sen θc = 1/${br(n)} → θc ≈ ${br(tc,1)}°.`}; }},
+{s:"sonja",l:2,g:12,f(){ const f=R(5,20); let p=R(f+2,4*f); const pi=1/(1/f-1/p); const A=-pi/p;
+  return {t:"num",q:`Lente convergente de f = ${f} cm, objeto a ${p} cm. A que distância da lente se forma a imagem, em cm?`,n:Number(pi.toFixed(1)),tol:0.25,u:"cm",x:`1/p' = 1/${f} − 1/${p} → p' ≈ ${br(pi,1)} cm. Aumento A = −p'/p ≈ ${br(A,2)} (imagem real e invertida).`}; }},
+{s:"sonja",l:1,g:12,f(){ const v=RC([0.5,1,1.25,2,2.5,4,5,-2,-4,-0.5]); const f=100/v;
+  return {t:"num",q:`Uma lente tem vergência de ${br(v)} di. Qual a distância focal, em cm?`,n:Number(f.toFixed(1)),tol:0.2,u:"cm",x:`f = 1/V = 1/${br(v)} m = ${br(f,1)} cm${v<0?" (negativa: lente divergente)":""}.`}; }},
+{s:"sonja",l:2,g:13,f(){ const R1=R(1,9)*10*RC([1,10]), R2=R(1,9)*10*RC([1,10]), U=RC([6,9,12,24]); const par=Math.random()<.5;
+  const Req=par?R1*R2/(R1+R2):R1+R2; const i=U/Req*1000;
+  return {t:"num",q:`Resistores de ${R1} Ω e ${R2} Ω ligados em ${par?"paralelo":"série"} a ${U} V. Qual a corrente total, em mA?`,n:Number(i.toFixed(1)),tol:Math.max(0.2,i*0.01),u:"mA",x:`R_eq = ${br(Req,1)} Ω. i = ${U} ÷ ${br(Req,1)} ≈ ${br(i,1)} mA.`}; }},
+{s:"sonja",l:1,g:13,f(){ const U=RC([5,9,12,24,110,127,220]), Rr=RC([10,20,47,100,220,470,1000]); const P=U*U/Rr;
+  return {t:"num",q:`Potência dissipada num resistor de ${Rr} Ω ligado a ${U} V, em watts:`,n:Number(P.toFixed(2)),tol:Math.max(0.02,P*0.01),u:"W",x:`P = U²/R = ${U}² ÷ ${Rr} ≈ ${br(P,2)} W.`}; }},
+{s:"sonja",l:2,g:14,f(){ const C=["preto","marrom","vermelho","laranja","amarelo","verde","azul","violeta","cinza","branco"]; const d1=R(1,9), d2=R(0,9), m=R(0,4); const val=(d1*10+d2)*10**m;
+  return {t:"num",q:`Resistor com faixas ${C[d1]}, ${C[d2]}, ${C[m]}, ouro. Qual o valor em ohms?`,n:val,tol:0,u:"Ω",x:`${d1}${d2} × 10<sup>${m}</sup> = ${val.toLocaleString("pt-BR")} Ω, tolerância ±5%.`}; }},
+{s:"sonja",l:1,g:13,f(){ const lam=R(40,70)*10; const E=1240/lam;
+  return {t:"num",q:`Energia de um fóton de ${lam} nm, em eV (use hc ≈ 1240 eV·nm):`,n:Number(E.toFixed(2)),tol:0.02,u:"eV",x:`E = 1240 ÷ ${lam} ≈ ${br(E,2)} eV.`}; }},
+{s:"sonja",l:3,g:13,f(){ const N=RC([300,500,600,1000]), lam=RC([405,532,650]); const d=1e6/N; const s=lam/d; const th=deg(Math.asin(s)); const mmax=Math.floor(d/lam);
+  const askMax=Math.random()<.35;
+  return askMax ? {t:"num",q:`Rede de ${N} linhas/mm iluminada com laser de ${lam} nm. Qual a maior ordem de difração que aparece?`,n:mmax,tol:0,u:"",x:`d = ${br(d,0)} nm; m < d/λ = ${br(d/lam,2)} → ${mmax}.`}
+    : {t:"num",q:`Rede de ${N} linhas/mm e laser de ${lam} nm. Ângulo do 1º máximo, em graus:`,n:Number(th.toFixed(1)),tol:0.5,u:"°",x:`d = 1/${N} mm = ${br(d,0)} nm. sen θ = ${lam}/${br(d,0)} = ${br(s,3)} → θ ≈ ${br(th,1)}°.`}; }},
+{s:"sonja",l:3,g:13,f(){ const lam=RC([405,532,633,650]), dmm=RC([0.1,0.2,0.25,0.5]), L=RC([1,1.5,2,3]); const dy=lam*1e-9*L/(dmm*1e-3)*1000;
+  return {t:"num",q:`Fenda dupla: d = ${br(dmm)} mm, anteparo a ${br(L)} m, laser de ${lam} nm. Distância entre franjas claras, em mm:`,n:Number(dy.toFixed(2)),tol:Math.max(0.02,dy*0.02),u:"mm",x:`Δy = λL/d = ${lam}×10⁻⁹ × ${br(L)} ÷ ${br(dmm)}×10⁻³ ≈ ${br(dy,2)} mm.`}; }},
+{s:"sonja",l:2,g:13,f(){ const th=RC([15,30,37,45,53,60,75]); const pc=Math.cos(rad(th))**2*100; const unpol=Math.random()<.5;
+  const val=unpol?pc/2:pc;
+  return {t:"num",q:`Luz ${unpol?"não polarizada":"já polarizada"} passa por ${unpol?"dois polarizadores com eixos a":"um polarizador girado de"} ${th}°. Que porcentagem da intensidade inicial sai?`,n:Number(val.toFixed(1)),tol:0.6,u:"%",x:`${unpol?"O 1º polarizador deixa 50%; depois ":""}Malus: cos²${th}° = ${br(pc/100,3)} → ${br(val,1)}%.`}; }},
+{s:"sonja",l:3,g:13,f(){ const q1=R(1,5), q2=R(1,5), rcm=RC([5,10,20,30]); const F=9e9*q1*1e-6*q2*1e-6/((rcm/100)**2);
+  return {t:"num",q:`Cargas de ${q1} µC e ${q2} µC a ${rcm} cm. Força elétrica, em newtons (k = 9 × 10⁹):`,n:Number(F.toFixed(3)),tol:Math.max(0.005,F*0.02),u:"N",x:`F = k·q₁·q₂/r² = 9×10⁹ × ${q1}×10⁻⁶ × ${q2}×10⁻⁶ ÷ ${br(rcm/100)}² ≈ ${br(F,3)} N.`}; }},
+{s:"sonja",l:3,g:13,f(){ const lam=R(30,45)*10, phi=RC([1.9,2.1,2.3,2.5]); const E=1240/lam, ec=E-phi;
+  return {t:"num",q:`Luz de ${lam} nm atinge um metal de função trabalho ${br(phi,1)} eV. Energia cinética máxima dos elétrons, em eV:`,n:Number(ec.toFixed(2)),tol:0.03,u:"eV",x:`hf = 1240/${lam} ≈ ${br(E,2)} eV; Ec = ${br(E,2)} − ${br(phi,1)} ≈ ${br(ec,2)} eV.`}; }},
+/* Apgar */
+{s:"apgar",l:1,g:15,f(){ const k=["cor","fc","ref","ton","resp"].map(()=>R(0,2)); const keys=["cor","fc","ref","ton","resp"];
+  const parts=keys.map((key,i)=>{ const d=APGAR_DESC[key][k[i]]; return typeof d==="function"?d():d; }); const tot=k.reduce((a,b)=>a+b,0);
+  const min=RC([1,5]);
+  return {t:"num",q:`${min}º minuto: ${parts.join(", ")}. Qual o Apgar?`,n:tot,tol:0,u:"",x:`Cor ${k[0]} + FC ${k[1]} + reflexo ${k[2]} + tônus ${k[3]} + respiração ${k[4]} = ${tot} (${tot>=7?"normal":tot>=4?"moderadamente anormal":"baixo"}).`}; }},
+{s:"apgar",l:3,g:17,f(){ const W=[1,5,15,30,45,51,45,30,15,5,1]; const s=R(5,10);
+  return {t:"num",q:`De quantas combinações diferentes das notas dos 5 sinais resulta um Apgar ${s}?`,n:W[s],tol:0,u:"",x:`É o coeficiente de x<sup>${s}</sup> em (1 + x + x²)⁵: ${W[s]}. Tabela de 0 a 10: 1, 5, 15, 30, 45, 51, 45, 30, 15, 5, 1.`}; }},
+{s:"apgar",l:2,g:16,f(){ const vp=R(40,95), fn=R(2,20), fp=R(10,80), vn=R(300,950); const which=RC(["sens","esp","vpp","vpn"]);
+  const val={sens:vp/(vp+fn),esp:vn/(vn+fp),vpp:vp/(vp+fp),vpn:vn/(vn+fn)}[which]*100;
+  const nome={sens:"a sensibilidade",esp:"a especificidade",vpp:"o VPP",vpn:"o VPN"}[which];
+  const form={sens:`${vp} ÷ (${vp} + ${fn})`,esp:`${vn} ÷ (${vn} + ${fp})`,vpp:`${vp} ÷ (${vp} + ${fp})`,vpn:`${vn} ÷ (${vn} + ${fn})`}[which];
+  return {t:"num",q:`Um teste teve VP = ${vp}, FP = ${fp}, FN = ${fn}, VN = ${vn}. Calcule ${nome}, em % (1 casa decimal).`,n:Number(val.toFixed(1)),tol:0.15,u:"%",x:`${form} = ${br(val,1)}%.`}; }},
+{s:"apgar",l:3,g:16,f(){ const N=RC([1000,2000,5000,10000,15000,25000]), se=RC([95,98,99,99.5]), es=RC([95,98,99,99.5,99.9]); const pop=100000;
+  const d=pop/N, vp=d*se/100, fp=(pop-d)*(1-es/100); const vpp=vp/(vp+fp)*100;
+  return {t:"num",q:`Doença com prevalência de 1 em ${N.toLocaleString("pt-BR")}. Teste com sensibilidade ${br(se,1)}% e especificidade ${br(es,1)}%. Qual o VPP, em %?`,n:Number(vpp.toFixed(1)),tol:Math.max(0.2,vpp*0.02),u:"%",
+    x:`Em 100.000: doentes ${br(d,1)}; VP ${br(vp,1)}; FP ${br(fp,1)}. VPP = VP ÷ (VP + FP) ≈ ${br(vpp,1)}%. Doença rara derruba o VPP.`}; }},
+{s:"apgar",l:2,g:16,f(){ const se=RC([80,85,90,95,99]), es=RC([80,90,95,98,99]); const rv=se/(100-es);
+  return {t:"num",q:`Sensibilidade ${se}% e especificidade ${es}%. Qual a razão de verossimilhança positiva? (1 casa decimal)`,n:Number(rv.toFixed(1)),tol:0.1,u:"",x:`RV+ = sens ÷ (1 − esp) = ${br(se/100)} ÷ ${br(1-es/100)} ≈ ${br(rv,1)}.`}; }},
+{s:"apgar",l:1,g:17,f(){ const nv=R(8,60)*100, ob=R(5,40); const t=ob/nv*1000;
+  return {t:"num",q:`Município com ${nv.toLocaleString("pt-BR")} nascidos vivos e ${ob} óbitos de menores de 1 ano. Taxa de mortalidade infantil, por mil (1 casa)?`,n:Number(t.toFixed(1)),tol:0.1,u:"‰",x:`${ob} ÷ ${nv.toLocaleString("pt-BR")} × 1.000 ≈ ${br(t,1)} por mil nascidos vivos.`}; }},
+{s:"apgar",l:1,g:16,f(){ const p0=R(28,42)*100, loss=R(3,14)/100; const p3=Math.round(p0*(1-loss)/10)*10; const pc=(p0-p3)/p0*100;
+  return {t:"num",q:`RN nasceu com ${p0.toLocaleString("pt-BR")} g e está com ${p3.toLocaleString("pt-BR")} g no 3º dia. Qual a perda percentual? (1 casa)`,n:Number(pc.toFixed(1)),tol:0.15,u:"%",x:`${p0-p3} ÷ ${p0} ≈ ${br(pc,1)}%: ${pc<=10?"dentro do esperado (até ≈10%)":"acima de 10%, merece atenção"}.`}; }},
+{s:"apgar",l:2,g:16,f(){ const msd=R(88,100); let mi=msd-R(0,6); if(mi<85) mi=85;
+  const dif=msd-mi; let r;
+  if(msd<=89||mi<=89) r="alterado"; else if(msd>=95&&mi>=95&&dif<=3) r="normal"; else r="duvidoso";
+  return {t:"mc",q:`Teste do coraçãozinho: MSD ${msd}%, membro inferior ${mi}% (diferença ${dif}%). Como se classifica? (fluxograma SBP 2022)`,o:["normal","duvidoso","alterado"],a:["normal","duvidoso","alterado"].indexOf(r),
+    x:`Normal: ≥ 95% nos dois e diferença ≤ 3%. Duvidoso: 90–94% ou diferença ≥ 4% (repetir em 1 h). Alterado: ≤ 89%.`}; }},
+{s:"apgar",l:2,g:17,f(){ const td=RC([15,20,30,40,60]), h=RC([1,2,3,4]), n0=RC([100,500,1000,2000]); const n=h*60/td; const N=n0*2**n;
+  return {t:"num",q:`Bactéria que dobra a cada ${td} min. Partindo de ${n0.toLocaleString("pt-BR")} células, quantas haverá após ${h} h?`,n:N,tol:0,u:"células",x:`${n} duplicações: ${n0.toLocaleString("pt-BR")} × 2<sup>${n}</sup> = ${N.toLocaleString("pt-BR")}.`}; }},
+{s:"apgar",l:2,g:16,f(){ const ig=R(30,43), peso=R(9,45)*100; const igc=ig<37?"pré-termo":ig>=42?"pós-termo":"termo"; const pc=peso<1000?"extremo baixo peso":peso<1500?"muito baixo peso":peso<2500?"baixo peso":"peso adequado";
+  const ask=Math.random()<.5;
+  return ask?{t:"mc",q:`RN com ${ig} semanas de idade gestacional. Como se classifica?`,o:["pré-termo","termo","pós-termo"],a:["pré-termo","termo","pós-termo"].indexOf(igc),x:`< 37 semanas pré-termo; 37 a 41s6d termo; ≥ 42 pós-termo.`}
+    :{t:"mc",q:`RN com ${peso.toLocaleString("pt-BR")} g ao nascer. Como se classifica?`,o:["extremo baixo peso","muito baixo peso","baixo peso","peso adequado"],a:["extremo baixo peso","muito baixo peso","baixo peso","peso adequado"].indexOf(pc),x:`< 1.000 g extremo; < 1.500 g muito baixo; < 2.500 g baixo.`}; }},
+/* Johanna */
+{s:"johanna",l:2,g:19,f(){ const col=R(30,300), d=R(3,7), v=RC([0.1,1]); const val=col/(v*10**-d); const k=Math.floor(Math.log10(val)); const coef=val/10**k;
+  return {t:"num",q:`Diluição 10<sup>−${d}</sup>, ${br(v,1)} mL plaqueado, ${col} colônias. Quantas UFC/mL havia, em unidades de 10<sup>${k}</sup>?`,n:Number(coef.toFixed(2)),tol:0.02,u:`× 10<sup>${k}</sup> UFC/mL`,x:`${col} ÷ (${br(v,1)} × 10<sup>−${d}</sup>) = ${br(coef,2)} × 10<sup>${k}</sup> UFC/mL.`}; }},
+{s:"johanna",l:1,g:19,f(){ const [nome,pc]=RC([["ureia",46],["nitrato de amônio",34],["sulfato de amônio",21]]); const N=R(4,30)*5; const kg=N/(pc/100);
+  return {t:"num",q:`Quantos kg de ${nome} (${pc}% de N) são necessários para fornecer ${N} kg de N?`,n:Number(kg.toFixed(0)),tol:Math.max(1,kg*0.01),u:"kg",x:`${N} ÷ ${br(pc/100)} ≈ ${br(kg,0)} kg.`}; }},
+{s:"johanna",l:2,g:19,f(){ const t=R(25,45)/10; const N=t*80; const ur=N/0.46;
+  return {t:"num",q:`Soja com ${br(t,1)} t/ha de grãos precisa de ≈ 80 kg de N por tonelada. Quantos kg de ureia (46% N) seriam necessários sem FBN?`,n:Number(ur.toFixed(0)),tol:Math.max(3,ur*0.01),u:"kg/ha",x:`${br(t,1)} × 80 = ${br(N,0)} kg de N; ÷ 0,46 ≈ ${br(ur,0)} kg de ureia. É isso que a FBN economiza.`}; }},
+{s:"johanna",l:3,g:19,f(){ const sem=RC([250000,300000,350000,400000]), conc=RC([1,2,5,8]); const cells=1.2e6*sem; const ml=cells/(conc*1e9);
+  return {t:"num",q:`Meta de 1,2 × 10⁶ células por semente, ${sem.toLocaleString("pt-BR")} sementes/ha, inoculante com ${conc} × 10⁹ células/mL. Quantos mL por hectare?`,n:Number(ml.toFixed(0)),tol:Math.max(1,ml*0.01),u:"mL",x:`1,2×10⁶ × ${sem.toLocaleString("pt-BR")} = ${br(cells/1e11,1)}×10¹¹ células; ÷ ${conc}×10⁹ ≈ ${br(ml,0)} mL.`}; }},
+{s:"johanna",l:1,g:19,f(){ const c1=RC([0.5,1,2,5]), c2=RC([0.01,0.05,0.1,0.2,0.25]), v2=RC([50,100,200,250,500]); if(c2>=c1) return GEN_FALLBACK(); const v1=c2*v2/c1;
+  return {t:"num",q:`Quantos mL de estoque ${br(c1)} mol/L para preparar ${v2} mL a ${br(c2)} mol/L?`,n:Number(v1.toFixed(1)),tol:0.05,u:"mL",x:`V₁ = C₂V₂/C₁ = ${br(c2)} × ${v2} ÷ ${br(c1)} = ${br(v1,1)} mL, completando com água até ${v2} mL.`}; }},
+{s:"johanna",l:1,g:19,f(){ const f=RC([[1,9,10],[0.1,0.9,10],[1,99,100],[0.5,4.5,10]]), n=f[2]===100?R(2,3):R(2,6); const tot=f[2]**n;
+  return {t:"num",q:`Diluição seriada: ${n} passos, cada um com ${br(f[0],1)} mL em ${br(f[1],1)} mL de diluente. Qual o fator total de diluição?`,n:tot,tol:0,u:"vezes",x:`Cada passo é 1:${f[2]} → ${f[2]}<sup>${n}</sup> = ${tot.toLocaleString("pt-BR")} (diluição 10<sup>−${Math.round(Math.log10(tot))}</sup>).`}; }},
+{s:"johanna",l:3,g:19,f(){ const n0e=R(1,3), ne=n0e+R(3,7), h=RC([5,6,8,10,12]); const n=(ne-n0e)*Math.log2(10); const g=h*60/n;
+  return {t:"num",q:`Uma cultura vai de 10<sup>${n0e}</sup> a 10<sup>${ne}</sup> células em ${h} h de fase log. Qual o tempo de geração, em minutos?`,n:Number(g.toFixed(0)),tol:1.5,u:"min",x:`n = log₂(10<sup>${ne-n0e}</sup>) ≈ ${br(n,1)} gerações; ${h*60} ÷ ${br(n,1)} ≈ ${br(g,0)} min.`}; }},
+{s:"johanna",l:1,g:19,f(){ const oc=RC([5,10,15]), ob=RC([4,10,40,60,100]);
+  return {t:"num",q:`Microscópio com ocular de ${oc}× e objetiva de ${ob}×. Qual o aumento total?`,n:oc*ob,tol:0,u:"×",x:`${oc} × ${ob} = ${oc*ob}×.${ob===100?" A objetiva de 100× usa óleo de imersão.":""}`}; }},
+{s:"johanna",l:2,g:18,f(){ const m=R(2,20); const atp=m*8;
+  return {t:"num",q:`Para produzir ${m} mol de NH₃ pela nitrogenase, quantos mol de ATP são gastos?`,n:atp,tol:0,u:"mol",x:`16 ATP por N₂ = 8 ATP por NH₃: ${m} × 8 = ${atp}.`}; }},
+{s:"johanna",l:3,g:19,f(){ const [nome,form,N,M]=RC([["ureia","CO(NH₂)₂",28,60],["sulfato de amônio","(NH₄)₂SO₄",28,132],["nitrato de amônio","NH₄NO₃",28,80],["amônia","NH₃",14,17]]); const pc=N/M*100;
+  return {t:"num",q:`Calcule a porcentagem de N em ${nome}, ${form} (H 1, C 12, N 14, O 16, S 32). 1 casa decimal.`,n:Number(pc.toFixed(1)),tol:0.2,u:"%",x:`N = ${N} g em ${M} g/mol → ${br(pc,1)}%.${nome==="ureia"?" A ureia comercial tem ≈ 45–46% por causa das impurezas.":""}`}; }}
+];
+function GEN_FALLBACK(){ return {t:"num",q:"Quantos mL de estoque 1 mol/L para preparar 100 mL a 0,1 mol/L?",n:10,tol:0,u:"mL",x:"V₁ = 0,1 × 100 ÷ 1 = 10 mL."}; }
+
 
 /* Material de bancada: o que estaria impresso na mesa de cada estação */
 const BENCH = {
@@ -435,7 +579,7 @@ function queueWrite(p, data){
 
 /* ---------------- Utilidades ---------------- */
 const app = document.getElementById("app");
-Q.forEach((q,i)=>q.id = q.s + i);
+Q.forEach((q,i)=>{ q.id = q.s + ":" + i; });
 const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const col = st => `var(${ST[st].c})`;
@@ -456,7 +600,7 @@ const PHONE_ON = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" st
 const PHONE_OFF = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M3 3l18 18"/></svg>`;
 
 /* ---------------- Guia em PDF: página do guia que explica cada questão ---------------- */
-const GUIDE = {"bertha0":8,"bertha1":8,"bertha2":8,"bertha3":8,"bertha4":9,"bertha5":8,"bertha6":10,"bertha7":8,"bertha8":9,"bertha9":9,"bertha10":9,"bertha11":8,"bertha12":8,"bertha13":8,"bertha14":8,"bertha15":8,"bertha16":9,"bertha17":9,"bertha18":10,"bertha19":10,"bertha20":9,"bertha21":9,"bertha22":9,"bertha23":10,"bertha24":9,"bertha25":10,"bertha26":10,"bertha27":10,"bertha28":10,"bertha29":10,"bertha30":10,"sonja31":12,"sonja32":12,"sonja33":12,"sonja34":12,"sonja35":13,"sonja36":13,"sonja37":13,"sonja38":13,"sonja39":12,"sonja40":13,"sonja41":12,"sonja42":13,"sonja43":13,"sonja44":14,"sonja45":13,"sonja46":13,"sonja47":13,"sonja48":13,"sonja49":12,"sonja50":12,"sonja51":12,"sonja52":13,"sonja53":13,"sonja54":12,"sonja55":13,"sonja56":13,"sonja57":13,"sonja58":13,"sonja59":12,"sonja60":13,"sonja61":13,"sonja62":13,"sonja63":13,"apgar64":15,"apgar65":16,"apgar66":15,"apgar67":15,"apgar68":15,"apgar69":15,"apgar70":15,"apgar71":16,"apgar72":16,"apgar73":16,"apgar74":15,"apgar75":15,"apgar76":15,"apgar77":15,"apgar78":15,"apgar79":15,"apgar80":16,"apgar81":16,"apgar82":16,"apgar83":16,"apgar84":16,"apgar85":17,"apgar86":16,"apgar87":16,"apgar88":17,"apgar89":17,"apgar90":15,"apgar91":17,"apgar92":16,"apgar93":17,"apgar94":16,"apgar95":16,"apgar96":16,"apgar97":16,"apgar98":16,"apgar99":15,"apgar100":17,"johanna101":18,"johanna102":19,"johanna103":18,"johanna104":18,"johanna105":18,"johanna106":18,"johanna107":19,"johanna108":18,"johanna109":18,"johanna110":18,"johanna111":19,"johanna112":19,"johanna113":19,"johanna114":19,"johanna115":19,"johanna116":19,"johanna117":18,"johanna118":18,"johanna119":19,"johanna120":19,"johanna121":18,"johanna122":19,"johanna123":18,"johanna124":19,"johanna125":18,"johanna126":19,"johanna127":19,"johanna128":18,"johanna129":19,"johanna130":19,"johanna131":19,"johanna132":19,"johanna133":19,"johanna134":18,"johanna135":19,"enigma136":21,"enigma137":21,"enigma138":21,"enigma139":21,"enigma140":21,"enigma141":21,"enigma142":21,"enigma143":21,"enigma144":21,"enigma145":21,"enigma146":21,"enigma147":21,"enigma148":21,"enigma149":21,"enigma150":21,"enigma151":21,"enigma152":21,"bertha153":8,"bertha154":8,"bertha155":8,"bertha156":8,"bertha157":8,"sonja158":12,"sonja159":12,"sonja160":13,"sonja161":12,"sonja162":12,"apgar163":15,"apgar164":15,"apgar165":15,"apgar166":15,"apgar167":15,"johanna168":18,"johanna169":18,"johanna170":18,"johanna171":19,"johanna172":19};
+const GUIDE = {"bertha:0":8,"bertha:1":8,"bertha:2":8,"bertha:3":8,"bertha:4":9,"bertha:5":8,"bertha:6":10,"bertha:7":8,"bertha:8":8,"bertha:9":8,"bertha:10":9,"bertha:11":9,"bertha:12":8,"bertha:13":8,"bertha:14":8,"bertha:15":8,"bertha:16":8,"bertha:17":8,"bertha:18":8,"bertha:19":8,"bertha:20":9,"bertha:21":9,"bertha:22":9,"bertha:23":10,"bertha:24":10,"bertha:25":9,"bertha:26":9,"bertha:27":9,"bertha:28":10,"bertha:29":9,"bertha:30":8,"bertha:31":8,"bertha:32":9,"bertha:33":8,"bertha:34":10,"bertha:35":10,"bertha:36":8,"bertha:37":8,"bertha:38":10,"bertha:39":10,"bertha:40":8,"bertha:41":8,"bertha:42":8,"bertha:43":8,"bertha:44":8,"sonja:45":12,"sonja:46":12,"sonja:47":12,"sonja:48":12,"sonja:49":12,"sonja:50":13,"sonja:51":13,"sonja:52":13,"sonja:53":13,"sonja:54":13,"sonja:55":12,"sonja:56":12,"sonja:57":12,"sonja:58":13,"sonja:59":13,"sonja:60":12,"sonja:61":12,"sonja:62":12,"sonja:63":12,"sonja:64":13,"sonja:65":13,"sonja:66":13,"sonja:67":12,"sonja:68":14,"sonja:69":12,"sonja:70":14,"sonja:71":12,"sonja:72":13,"sonja:73":14,"sonja:74":13,"sonja:75":13,"sonja:76":12,"sonja:77":12,"sonja:78":12,"sonja:79":12,"sonja:80":12,"sonja:81":13,"sonja:82":13,"sonja:83":12,"sonja:84":12,"sonja:85":14,"sonja:86":12,"sonja:87":12,"apgar:88":15,"apgar:89":16,"apgar:90":15,"apgar:91":15,"apgar:92":15,"apgar:93":15,"apgar:94":16,"apgar:95":16,"apgar:96":15,"apgar:97":15,"apgar:98":15,"apgar:99":16,"apgar:100":15,"apgar:101":16,"apgar:102":16,"apgar:103":16,"apgar:104":16,"apgar:105":16,"apgar:106":16,"apgar:107":15,"apgar:108":16,"apgar:109":16,"apgar:110":16,"apgar:111":17,"apgar:112":16,"apgar:113":16,"apgar:114":16,"apgar:115":15,"apgar:116":15,"apgar:117":16,"apgar:118":16,"apgar:119":17,"apgar:120":15,"apgar:121":15,"apgar:122":15,"apgar:123":16,"apgar:124":16,"apgar:125":15,"apgar:126":17,"apgar:127":16,"apgar:128":15,"apgar:129":15,"apgar:130":15,"apgar:131":15,"apgar:132":15,"apgar:133":15,"johanna:134":18,"johanna:135":19,"johanna:136":18,"johanna:137":20,"johanna:138":18,"johanna:139":18,"johanna:140":18,"johanna:141":18,"johanna:142":19,"johanna:143":18,"johanna:144":19,"johanna:145":19,"johanna:146":18,"johanna:147":19,"johanna:148":19,"johanna:149":19,"johanna:150":19,"johanna:151":18,"johanna:152":18,"johanna:153":19,"johanna:154":19,"johanna:155":19,"johanna:156":19,"johanna:157":19,"johanna:158":19,"johanna:159":19,"johanna:160":19,"johanna:161":19,"johanna:162":18,"johanna:163":19,"johanna:164":19,"johanna:165":19,"johanna:166":18,"johanna:167":19,"johanna:168":19,"johanna:169":19,"johanna:170":19,"johanna:171":19,"johanna:172":19,"johanna:173":18,"johanna:174":19,"johanna:175":19,"johanna:176":19,"johanna:177":18,"johanna:178":19,"johanna:179":18,"johanna:180":18,"johanna:181":19,"johanna:182":19,"johanna:183":18};
 function openGuide(page){
   const m = document.getElementById("guideModal");
   document.getElementById("guideTitle").textContent = "Guia, página " + page;
@@ -613,7 +757,7 @@ function renderHome(){
     <section class="panel mode">
       <div class="eyebrow">Treino</div>
       <h3>Rodada de ${ROUND} questões</h3>
-      <p class="muted">Só questões das suas estações: ${PEOPLE[me].capt.map(s=>ST[s].name).join(" e ")}. Acertou duas seguidas, sobe a dificuldade; errou, desce.</p>
+      <p class="muted">Só das suas estações (${PEOPLE[me].capt.map(s=>ST[s].name).join(" e ")}): respostas para escrever, contas com números sorteados a cada vez, etapas para ordenar e algumas de múltipla escolha. Acertou duas seguidas, sobe a dificuldade; errou, desce.</p>
       <div id="homeStats" class="stack" style="gap:6px">${homeStats()}</div>
       <div><button class="btn" id="goTrain" type="button">${d.respondidas?"Continuar treino":"Começar treino"}</button></div>
     </section>
@@ -633,51 +777,93 @@ function renderHome(){
 }
 
 /* ---------------- Questão ---------------- */
+const norm = t => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[₀₁₂₃₄₅₆₇₈₉]/g, d=>"₀₁₂₃₄₅₆₇₈₉".indexOf(d)).replace(/[^a-z0-9]+/g," ").trim();
+function lev(a,b){ const m=a.length,n=b.length; if(Math.abs(m-n)>2) return 9; let prev=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; } return prev[n]; }
+function txtOk(ans, ac){ const a = norm(ans); if(!a) return false; const a2 = a.replace(/ /g,"");
+  return ac.some(x=>{ const b = norm(x), b2 = b.replace(/ /g,"");
+    if(a2===b2) return true;
+    if(b2.length>=4 && (" "+a+" ").includes(" "+b+" ")) return true;
+    const tol = b2.length>=10?2:b2.length>=5?1:0; return tol>0 && lev(a2,b2)<=tol; }); }
+const HINT = {txt:"ESCREVA A RESPOSTA", num:"DIGITE O NÚMERO", mc:"ESCOLHA UMA", ord:"TOQUE NA ORDEM CERTA"};
+function rightText(q){ return q.t==="mc" ? q.o[q.a] : q.t==="txt" ? q.ac[0] : q.t==="ord" ? q.o.join(" → ") : fmtNum(q.n) + (q.u?` ${q.u}`:""); }
 function questionHTML(q){
-  const head = `<div class="qhead"><div class="chips">${chip(q.s,true)}<span class="lvl muted">${q.c?"CONSULTA":LV[q.l].toUpperCase()}</span></div></div><div class="qtext">${q.q}</div>`;
-  if(q.o){
+  const head = `<div class="qhead"><div class="chips">${chip(q.s,true)}<span class="lvl muted">${q.c?"CONSULTA":LV[q.l].toUpperCase()}</span></div><span class="hint">${HINT[q.t]}</span></div><div class="qtext">${q.q}</div>`;
+  if(q.t==="mc"){
     const ord = shuffle(q.o.map((t,i)=>i));
     return head + `<div class="opts">${ord.map((i,k)=>`<button class="opt" type="button" data-i="${i}"><span class="k">${"ABCDE"[k]}</span><span>${q.o[i]}</span></button>`).join("")}</div><div id="fb"></div>`;
   }
-  return head + `<form class="numrow" id="numForm"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="Sua resposta" aria-label="Resposta numérica">
-    ${q.u?`<span class="muted">${q.u}</span>`:""}<button class="btn" type="submit">Responder</button></form><div id="fb"></div>`;
+  if(q.t==="ord"){
+    let mix = shuffle(q.o.map((t,i)=>i)); if(mix.every((v,i)=>v===i)) mix = mix.reverse();
+    return head + `<div class="ordpool" id="ordPool">${mix.map(i=>`<button type="button" data-i="${i}">${q.o[i]}</button>`).join("")}</div>
+      <ol class="ordpick" id="ordPick"></ol>
+      <div class="row" style="margin-top:12px"><button class="btn" id="ordOk" type="button" disabled>Confirmar ordem</button><button class="linkbtn" id="ordUndo" type="button">Desfazer</button></div><div id="fb"></div>`;
+  }
+  const isNum = q.t==="num";
+  return head + `<form class="numrow" id="numForm"><input id="numIn" class="${isNum?"":"txtin"}" ${isNum?'inputmode="decimal"':'autocapitalize="off" spellcheck="false"'} autocomplete="off" placeholder="${isNum?"Número":"Sua resposta"}" aria-label="Resposta">
+    ${isNum&&q.u?`<span class="muted">${q.u}</span>`:""}<button class="btn" type="submit">Responder</button></form><div id="fb"></div>`;
 }
 function bindQuestion(q, onAnswer){
-  if(q.o){
+  const done = ok => { cuiudo(ok?"ok":"bad"); onAnswer(ok, rightText(q)); };
+  if(q.t==="mc"){
     app.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
       const ok = +b.dataset.i===q.a;
       app.querySelectorAll(".opt").forEach(x=>{ x.disabled = true; if(+x.dataset.i===q.a) x.classList.add("right"); });
-      if(!ok) b.classList.add("wrong");
-      cuiudo(ok?"ok":"bad");
-      onAnswer(ok, q.o[q.a]);
+      if(!ok) b.classList.add("wrong"); done(ok);
     }));
-  } else {
-    const f = document.getElementById("numForm"), inp = document.getElementById("numIn");
-    timers.push(setTimeout(()=>inp.focus(), 50));
-    f.addEventListener("submit", e=>{ e.preventDefault(); const v = parseNum(inp.value);
-      if(isNaN(v)){ inp.setCustomValidity("Digite um número, como 4,7 ou 4700."); inp.reportValidity(); inp.setCustomValidity(""); return; }
-      const ok = Math.abs(v - q.n) <= q.t + 1e-9;
-      inp.disabled = true; f.querySelector("button").disabled = true;
-      cuiudo(ok?"ok":"bad");
-      onAnswer(ok, fmtNum(q.n) + (q.u?` ${q.u}`:""));
-    });
+    return;
   }
+  if(q.t==="ord"){
+    const pool = document.getElementById("ordPool"), pickEl = document.getElementById("ordPick"), okB = document.getElementById("ordOk"), undo = document.getElementById("ordUndo");
+    const seq = [];
+    const draw = ()=>{ pickEl.innerHTML = seq.map(i=>`<li>${q.o[i]}</li>`).join(""); okB.disabled = seq.length!==q.o.length;
+      pool.querySelectorAll("button").forEach(b=>b.disabled = seq.includes(+b.dataset.i)); };
+    pool.addEventListener("click", e=>{ const b = e.target.closest("button"); if(!b || b.disabled) return; seq.push(+b.dataset.i); draw(); });
+    undo.onclick = ()=>{ seq.pop(); draw(); };
+    okB.onclick = ()=>{ const ok = seq.every((v,i)=>v===i);
+      pickEl.querySelectorAll("li").forEach((li,i)=>li.classList.add(seq[i]===i?"right":"wrong"));
+      okB.disabled = true; undo.hidden = true; pool.querySelectorAll("button").forEach(b=>b.disabled = true); done(ok); };
+    return;
+  }
+  const f = document.getElementById("numForm"), inp = document.getElementById("numIn");
+  timers.push(setTimeout(()=>inp.focus(), 50));
+  f.addEventListener("submit", e=>{ e.preventDefault();
+    let ok;
+    if(q.t==="num"){ const v = parseNum(inp.value);
+      if(isNaN(v)){ inp.setCustomValidity("Digite um número, como 4,7 ou 4700."); inp.reportValidity(); inp.setCustomValidity(""); return; }
+      ok = Math.abs(v - q.n) <= q.tol + 1e-9;
+    } else { if(!inp.value.trim()){ inp.setCustomValidity("Escreva sua resposta."); inp.reportValidity(); inp.setCustomValidity(""); return; }
+      ok = txtOk(inp.value, q.ac); }
+    inp.disabled = true; f.querySelector("button").disabled = true; done(ok);
+  });
 }
-const feedback = (ok, right, q) => `<div class="fb ${ok?"ok":"bad"}"><b>${ok?"Certo.":"Errado. Resposta: "+right}</b>${q.x}${!ok && GUIDE[q.id]?`<div><button class="guidebtn" type="button" data-guide="${GUIDE[q.id]}">Ver no guia, página ${GUIDE[q.id]}</button></div>`:""}</div>`;
+const guidePage = q => q.g || GUIDE[q.id];
+const feedback = (ok, right, q) => `<div class="fb ${ok?"ok":"bad"}"><b>${ok?"Certo.":"Errado. Resposta: "+right}</b>${q.x}${!ok && guidePage(q)?`<div><button class="guidebtn" type="button" data-guide="${guidePage(q)}">Ver no guia, página ${guidePage(q)}</button></div>`:""}</div>`;
 function tally(d, st, ok){ d.stats = d.stats || {}; d.stats[st] = d.stats[st] || {n:0, ok:0}; d.stats[st].n++; if(ok) d.stats[st].ok++; d.respondidas++; if(ok) d.acertos++; }
 
 /* ---------------- Treino progressivo ---------------- */
 let tr = null;
-function weakTeamStation(){ const team = {}; Object.keys(PEOPLE).forEach(p=>Object.entries(prog(p).stats||{}).forEach(([s,x])=>{ team[s]=team[s]||{n:0,ok:0}; team[s].n+=x.n; team[s].ok+=x.ok; }));
-  let w = null; STATIONS.forEach(s=>{ const t = team[s]; if(t && t.n>=4 && (!w || t.ok/t.n < w.pc)) w = {s, pc:t.ok/t.n}; }); return w && w.s; }
-function nextStation(){ return pick(PEOPLE[me].capt); }
+function seenMap(){ local.seen2 = local.seen2 || {}; local.seen2[me] = local.seen2[me] || {}; return local.seen2[me]; }
+const statics = st => Q.filter(q=>q.s===st && !q.c);
+/* Escolhe a próxima questão: 40% contas com números sorteados, 60% questões fixas ainda não vistas por esta pessoa */
+function draw(st, level, avoid, lastGen){
+  const gens = GEN.filter(g=>g.s===st && g!==lastGen);
+  if(gens.length && Math.random() < 0.4){
+    const near = gens.filter(g=>g.l===level); const g = pick(near.length ? near : gens);
+    return Object.assign({s:st, l:g.l, g:g.g, id:null, gen:g}, g.f());
+  }
+  const seen = seenMap(), all = statics(st), free = q => !seen[q.id] && !avoid.includes(q.id);
+  let pool = all.filter(q=>free(q) && q.l===level);
+  if(!pool.length) pool = all.filter(q=>free(q) && Math.abs(q.l-level)<=1);
+  if(!pool.length) pool = all.filter(free);
+  if(!pool.length){ all.forEach(q=>delete seen[q.id]); saveLocal(); pool = all.filter(q=>!avoid.includes(q.id)); }
+  return pick(pool);
+}
 function nextQuestion(){
-  const st = nextStation();
-  let cand = Q.filter(q=>q.s===st && !q.c && q.l===tr.diff);
-  if(!cand.length) cand = Q.filter(q=>q.s===st && !q.c);
-  const fresh = cand.filter(q=>!local.seen[q.id] && !tr.used.includes(q.id));
-  const q = pick(fresh.length ? fresh : cand.filter(q=>!tr.used.includes(q.id)).length ? cand.filter(q=>!tr.used.includes(q.id)) : cand);
-  tr.used.push(q.id); return q;
+  const st = pick(PEOPLE[me].capt);
+  const q = draw(st, tr.diff, tr.used, tr.lastGen);
+  if(q.id) tr.used.push(q.id); tr.lastGen = q.gen || null; return q;
 }
 function startTrain(){
   const d = prog();
@@ -699,7 +885,7 @@ function showTrain(){
     if(ok){ tr.streak++; gain = 10*q.l + (tr.streak>=3?5:0); d.pontos += gain; tr.gained += gain;
       if(tr.streak>=2 && tr.diff<3){ tr.diff++; tr.streak = 0; } }
     else { tr.streak = 0; if(tr.diff>1) tr.diff--; }
-    d.nivel = tr.diff; tally(d, q.s, ok); local.seen[q.id] = true; setProg(me, d);
+    d.nivel = tr.diff; tally(d, q.s, ok); if(q.id) seenMap()[q.id] = true; setProg(me, d);
     tr.results.push(ok);
     if(tr.diff>was) setTimeout(()=>cuiudo("up"), 2000);
     const msg = tr.diff>was ? "Subiu para "+LV[tr.diff] : tr.diff<was ? "Desceu para "+LV[tr.diff] : "";
@@ -783,14 +969,14 @@ function showClue(){
   }));
 }
 function simQuestions(st){
-  const L = sim.lvl, pool = Q.filter(q=>q.s===st && !q.c);
-  const at = l => shuffle(pool.filter(q=>q.l===l));
+  const L = sim.lvl;
   if(sim.phone[st]){
-    const c = shuffle(Q.filter(q=>q.s===st && q.c));
-    return [c[0], at(3)[0]];
+    const seen = seenMap(), cs = Q.filter(q=>q.s===st && q.c); const fresh = cs.filter(q=>!seen[q.id]);
+    const c = pick(fresh.length ? fresh : cs);
+    return [c, draw(st, 3, [c.id], null)];
   }
-  const a = at(L)[0], b = at(Math.min(3, L+1)).find(q=>q!==a) || at(L).find(q=>q!==a);
-  return [a, b];
+  const a = draw(st, L, [], null);
+  return [a, draw(st, Math.min(3, L+1), a.id?[a.id]:[], a.gen||null)];
 }
 function enterStation(){
   const st = sim.order[sim.idx];
@@ -812,7 +998,7 @@ function showSimQ(){
   const bb = document.getElementById("benchBtn");
   bb.onclick = ()=>{ const b = document.getElementById("bench"); b.hidden = !b.hidden; bb.setAttribute("aria-expanded", !b.hidden); bb.textContent = b.hidden ? "Ver material de bancada" : "Esconder material de bancada"; };
   bindQuestion(q, (ok, right)=>{
-    const d = prog(); tally(d, q.s, ok); setProg(me, d);
+    const d = prog(); tally(d, q.s, ok); if(q.id) seenMap()[q.id] = true; setProg(me, d);
     const fb = document.getElementById("fb");
     if(ok){
       fb.innerHTML = feedback(true, right, q) + `<div class="row" style="margin-top:14px"><button class="btn" id="next" type="button">${sim.qi===0?"Próxima pergunta":"Sair da sala"}</button></div>`;
